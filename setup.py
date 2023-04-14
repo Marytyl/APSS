@@ -4,13 +4,13 @@ import map as m
 
 def gen_eq_matrix(M, n, lsh_list):
     row, col = M, n
-    eq_mat = [[0] * col] * row
-    for i in range(row):
+    eq_mat = [[0 for i in range(col)] for j in range(row)]
+    for i in range(1, row):
         for j in range(col):
             arg_min = 0
             for k in range(i):
-                if lsh_list[i][j] == lsh_list[k][j]:
-                    arg_min = k
+                if lsh_list[k][j] == lsh_list[i][j]:
+                    arg_min = k+1
                     break
             eq_mat[i][j] = arg_min
     return eq_mat
