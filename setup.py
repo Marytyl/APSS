@@ -21,21 +21,28 @@ def gen_eq_matrix(M, n, lsh_list):
 
 def is_valid_eq(eq_mat, k):
     flag = 0
-    max_nonzero_count = 0
+    max_nonzero_count = []
+    nonzero_rows = 0
+    failed_rows = 0
+    max_nonzero_count.append(0)
     for i in range(len(eq_mat)):
         count_nonzero = 0
         for j in range(len(eq_mat[0])):
             if eq_mat[i][j] != 0:
                 count_nonzero += 1
-                if(count_nonzero > max_nonzero_count):
-                    max_nonzero_count = count_nonzero
+                if(count_nonzero > max_nonzero_count[nonzero_rows]):
+                    max_nonzero_count.append(count_nonzero)
             if count_nonzero == k:
                 flag = 1
-                break
+                #break
+        if count_nonzero != 0:
+            nonzero_rows += 1
         if flag == 1:
-            max_nonzero_count = k
-            break
+            #max_nonzero_count.append(k)
+            failed_rows += 1
+            #break
     print("Max nonzero count "+str(max_nonzero_count))
+    print("Number of failed rows: "+str(failed_rows))
     return flag
 
 def sample_codes(n, k, M, eq):
