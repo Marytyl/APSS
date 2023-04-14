@@ -2,10 +2,6 @@ import numpy as np
 import unireedsolomon as rs
 import map as m
 
-# def build_index(m, lsh_list):
-#     index = m, lsh_list
-#     return index
-
 def gen_eq_matrix(M, n, lsh_list):
     row, col = M, n
     eq_mat = [[0] * col] * row
@@ -31,18 +27,21 @@ def is_valid_eq(eq_mat, k):
             if eq_mat[i][j] != 0:
                 count_nonzero += 1
                 if(count_nonzero > max_nonzero_count[nonzero_rows]):
-                    max_nonzero_count.append(count_nonzero)
+                    max_nonzero_count[nonzero_rows] = count_nonzero
             if count_nonzero == k:
                 flag = 1
                 #break
         if count_nonzero != 0:
             nonzero_rows += 1
+            max_nonzero_count.append(0)
         if flag == 1:
             #max_nonzero_count.append(k)
             failed_rows += 1
             #break
-    print("Max nonzero count "+str(max_nonzero_count))
-    print("Number of failed rows: "+str(failed_rows))
+    print("Max nonzero count per row: " + str(max_nonzero_count))
+    print("Max nonzero count per matrix: " + str(max(max_nonzero_count)))
+    print("Number of nonzero rows: " + str(nonzero_rows))
+    print("Number of failed rows: " + str(failed_rows))
     return flag
 
 def sample_codes(n, k, M, eq):
