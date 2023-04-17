@@ -21,6 +21,8 @@ def gen_eq_matrix(M, n, lsh_list):
 
     lsh_dict = {}
     for j in range(col):
+        if j%100 == 0:
+            print("Current column is "+str(j))
         for i in range(1, row):
             key = str(j)+", "+str(lsh_list[i][j])
             if key in lsh_dict:

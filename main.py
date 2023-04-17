@@ -54,16 +54,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
-    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=18)
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=10000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=21)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=1259)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=1000)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
-    parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
-    parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
+    parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.1)
+    parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.5)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=21)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=34)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
