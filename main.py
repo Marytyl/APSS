@@ -43,27 +43,28 @@ def compute_eLSH(elements):
     return output
 
 def show_plot(x_axis, y_axis, x_label, y_label, title):
-    plt.hist(y_axis, 5)
+    plt.hist(y_axis, max(y_axis)-min(y_axis)+1)
     plt.ylabel(x_label)
     plt.xlabel(y_label)
-    plt.title(title)
+    plt.title("")
     plt.show()
+    plt.savefig(title)
 
 if __name__ == '__main__':
     print(sys.version)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
-    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=10000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=21)
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=18)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=1000)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default= 1259)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
-    parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.1)
-    parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.5)
+    #parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
+    #parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=34)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=21)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
@@ -126,8 +127,14 @@ if __name__ == '__main__':
             print("iteration: "+str(counter))
 
         x_axis = [i+1 for i in range(10)]
-        y_axis = [12, 12, 11, 12, 13, 10, 13, 12, 13, 12]
-        show_plot(x_axis, y_axis,  "Frequency", "Max. number of bad matches", "")
+        y_axis = [12, 12, 11, 12, 13, 10, 13, 12, 13, 12, 13, 11, 13, 11, 13, 14, 11, 11, 13, 10, 15, 12, 13, 13, 14]
+        show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
+                  "Histogram of Maximum number of matches, M=10^3")
+
+        x_axis = [i + 1 for i in range(10)]
+        y_axis = [14, 14, 15, 14, 15, 14, 13, 15, 14, 14, 17, 16, 16, 15, 14, 14, 15, 17, 14, 13]
+        show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
+                  "Histogram of Maximum number of matches, M=10^4")
 
 
 
