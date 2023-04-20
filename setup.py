@@ -27,11 +27,12 @@ def gen_eq_matrix(M, n, lsh_list, parallel):
     arr = []
 
     if parallel:
-        print(num_cores)
         eq_matrix_one_col_ = partial(eq_matrix_one_col, eq_mat=eq_mat, lsh_list=lsh_list, row=row)
         arr.append(Parallel(n_jobs=num_cores)(delayed(eq_matrix_one_col_)(j) for j in range(col)))
 
-        eq_mat = np.asmatrix(arr.T)
+        arr = np.array(arr)
+        eq_mat = arr.T
+
 
     else:
         lsh_dict = {}
