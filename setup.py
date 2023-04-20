@@ -3,32 +3,47 @@ import unireedsolomon as rs
 import map as m
 import multiprocessing as mp
 from joblib import Parallel, delayed
+from functools import partial
 
 
-def eq_matrix_one_col(eq_mat,j, lsh_list, row):
+num_cores = mp.cpu_count()
+
+
+def eq_matrix_one_col(j, eq_mat, lsh_list, row):
+    lsh_dict = {}
     for i in range(1, row):
-        arg_min = 0
-        for k in range(i):
-            if lsh_list[k][j] == lsh_list[i][j]:
-                arg_min = k + 1
-                break
-        eq_mat[i][j] = arg_min
+        key = str(j) + ", " + str(lsh_list[i][j])
+        if key in lsh_dict:
+            eq_mat[i][j] = lsh_dict[key]
+        else:
+            lsh_dict[key] = i
+    return np.array(eq_mat)[:, j]
 
-def gen_eq_matrix(M, n, lsh_list):
+def gen_eq_matrix(M, n, lsh_list, parallel):
     parallel = 1
     row, col = M, n
     eq_mat = [[0 for i in range(col)] for j in range(row)]
 
-    lsh_dict = {}
-    for j in range(col):
-        if j%100 == 0:
-            print("Current column is "+str(j))
-        for i in range(1, row):
-            key = str(j)+", "+str(lsh_list[i][j])
-            if key in lsh_dict:
-                eq_mat[i][j] = lsh_dict[key]
-            else:
-                lsh_dict[key] = i
+    arr = []
+
+    if parallel:
+        print(num_cores)
+        eq_matrix_one_col_ = partial(eq_matrix_one_col, eq_mat=eq_mat, lsh_list=lsh_list, row=row)
+        arr.append(Parallel(n_jobs=num_cores)(delayed(eq_matrix_one_col_)(j) for j in range(col)))
+
+        eq_mat = np.asmatrix(arr.T)
+
+    else:
+        lsh_dict = {}
+        for j in range(col):
+            if j%100 == 0:
+                print("Current column is "+str(j))
+            for i in range(1, row):
+                key = str(j)+", "+str(lsh_list[i][j])
+                if key in lsh_dict:
+                    eq_mat[i][j] = lsh_dict[key]
+                else:
+                    lsh_dict[key] = i
 
 
     # if parallel:
