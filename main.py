@@ -10,8 +10,11 @@ import matplotlib.pyplot as plt
 import eLSH as eLSH_import
 from LSH import LSH
 
+
+
 from b4_objs import node_data, Iris, to_iris
-from setup import gen_eq_matrix, is_valid_eq
+from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict
+from search import search_query_dict
 
 
 def build_rand_dataset(M, vec_size, t, show_hist = False):
@@ -29,6 +32,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False):
 #         else:
 #             hash_to_iris[str(h)] = [element]
 
+
 # compute eLSH and returns the list of length l
 def compute_eLSH_one(element):
     output = eLSH.hash(element.vector)  # length of l
@@ -41,6 +45,7 @@ def compute_eLSH(elements):
     for i in elements:
         output.append(compute_eLSH_one(i))
     return output
+
 
 def show_plot(x_axis, y_axis, x_label, y_label, title):
     plt.hist(y_axis, max(y_axis)-min(y_axis)+1)
@@ -59,12 +64,12 @@ if __name__ == '__main__':
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=18)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default= 1259)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=255)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=21)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=20)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
@@ -83,7 +88,7 @@ if __name__ == '__main__':
     internal_bf_fpr = args.internal_bf_fp
     lsh_size = args.lsh_size  # LSH output size
 
-
+    query = None
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
 
@@ -97,6 +102,7 @@ if __name__ == '__main__':
         # print("random data size : ", len(random_data))
 
         data = to_iris(random_data)
+        query = to_iris(random_data[0])
 
         success = 1
         counter = 0
@@ -112,7 +118,7 @@ if __name__ == '__main__':
             # print("******************")
             #print(len(lsh_list[0]), len(lsh_list))
             t_start = time.time()
-            eq = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
+            eq = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list, False)
             t_end = time.time()
             t_eq = t_end - t_start
             print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
@@ -126,15 +132,30 @@ if __name__ == '__main__':
             counter += 1
             print("iteration: "+str(counter))
 
-        x_axis = [i+1 for i in range(10)]
-        y_axis = [12, 12, 11, 12, 13, 10, 13, 12, 13, 12, 13, 11, 13, 11, 13, 14, 11, 11, 13, 10, 15, 12, 13, 13, 14]
-        show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
-                  "Histogram of Maximum number of matches, M=10^3")
+        t_start = time.time()
+        codes = sample_codes(n, k, M, eq)
+        t_end = time.time()
+        t_code_sampling = t_end - t_start
+        print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
+        print(codes)
 
-        x_axis = [i + 1 for i in range(10)]
-        y_axis = [14, 14, 15, 14, 15, 14, 13, 15, 14, 14, 17, 16, 16, 15, 14, 14, 15, 17, 14, 13]
-        show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
-                  "Histogram of Maximum number of matches, M=10^4")
+        dict = gen_dict(codes, M, n, lsh_list)
+
+        #l_query = compute_eLSH(query)
+        l_query = lsh_list[1]
+        print(search_query_dict(l_query, lsh_list, k, dict))
+
+
+
+        # x_axis = [i+1 for i in range(10)]
+        # y_axis = [12, 12, 11, 12, 13, 10, 13, 12, 13, 12, 13, 11, 13, 11, 13, 14, 11, 11, 13, 10, 15, 12, 13, 13, 14]
+        # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
+        #           "Histogram of Maximum number of matches, M=10^3")
+        #
+        # x_axis = [i + 1 for i in range(10)]
+        # y_axis = [14, 14, 15, 14, 15, 14, 13, 15, 14, 14, 17, 16, 16, 15, 14, 14, 15, 17, 14, 13]
+        # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
+        #           "Histogram of Maximum number of matches, M=10^4")
 
 
 
