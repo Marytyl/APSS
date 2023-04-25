@@ -20,7 +20,7 @@ def eq_matrix_one_col(j, eq_mat, lsh_list, row):
     return np.array(eq_mat)[:, j]
 
 def gen_eq_matrix(M, n, lsh_list, parallel):
-    parallel = 1
+    #parallel = 0
     row, col = M, n
     eq_mat = [[0 for i in range(col)] for j in range(row)]
 
@@ -103,13 +103,16 @@ def sample_codes(n, k, M, eq):
     coder = rs.RSCoder(n, k)
     codes = []
     for i in range(M):
-        c = coder.encode(i)
-        c = chr(i) + c
-        for j in range(n):
+        c = coder.encode(str(i))
+        c = list(c)
+        for j in range(len(c)):
             index = eq[i][j]
             if index != 0:
-                c[i][j] = c[index][j]
-        codes[i] = c
+                c[j] = codes[index][j+1]
+        codes.append(chr(i))
+        for j in range(len(c)):
+            if c[j] != None:
+                codes[i] += c[j]
     return codes
 
 def gen_map(codes, M, n, lsh_list):
