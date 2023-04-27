@@ -2,72 +2,73 @@ import numpy as np
 import unireedsolomon as rs
 import map as m
 import multiprocessing as mp
+import eLSH as eLSH_import
 from joblib import Parallel, delayed
+from LSH import LSH
+import secrets
 from functools import partial
 
 
-num_cores = mp.cpu_count()
+#num_cores = mp.cpu_count()
+num_cores=16
 
-
-def eq_matrix_one_col(j, eq_mat, lsh_list, row):
+def eq_matrix_one_col(dataset, s, vec_size):
+    r = .85
+    c = 50 / 85
+    eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, 1)
+    lsh_list = []
+    for data_element in dataset:
+        lsh_list.append(eLSH.hash(data_element.vector))
+    row = len(dataset)
+    eq_col = [0 for i in range(row)]
     lsh_dict = {}
     for i in range(1, row):
-        key = str(j) + ", " + str(lsh_list[i][j])
-        if key in lsh_dict:
-            eq_mat[i][j] = lsh_dict[key]
+        if str(lsh_list[i]) in lsh_dict:
+            eq_col[i] = lsh_dict[str(lsh_list[i])]
         else:
-            lsh_dict[key] = i
-    return np.array(eq_mat)[:, j]
+            lsh_dict[str(lsh_list[i])] = i
 
-def gen_eq_matrix(M, n, lsh_list, parallel):
-    #parallel = 0
+    return eq_col
+
+
+def gen_eq_matrix_parallel(M, n, dataset, s, vec_size):
+    eq_col = Parallel(n_jobs=num_cores)(delayed(eq_matrix_one_col)
+                                                (dataset, s, vec_size)
+                                                for i in range(n))
+    print(type(eq_col))
+    print(len(eq_col))
+    eq_matrix = []
+    for col in eq_col:
+        eq_matrix.extend(col)
+    # return matches
+    # r=.85
+    # c=50/85
+    # eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
+    # lsh = eLSH.hashes
+    # lsh_list = compute_eLSH(data)
+    # t_end = time.time()
+    # t_lsh = t_end - t_start
+    # print("Successfully generated LSH evaluations in " + str(t_lsh) + " seconds")
+
+
+def gen_eq_matrix(M, n, lsh_list):
+    parallel = 0
     row, col = M, n
     eq_mat = [[0 for i in range(col)] for j in range(row)]
 
     arr = []
 
-    if parallel:
-        eq_matrix_one_col_ = partial(eq_matrix_one_col, eq_mat=eq_mat, lsh_list=lsh_list, row=row)
-        arr.append(Parallel(n_jobs=num_cores)(delayed(eq_matrix_one_col_)(j) for j in range(col)))
+    lsh_dict = {}
+    for j in range(col):
+        if j%100 == 0:
+            print("Current column is "+str(j))
+        for i in range(1, row):
+            key = str(j)+", "+str(lsh_list[i][j])
+            if key in lsh_dict:
+                eq_mat[i][j] = lsh_dict[key]
+            else:
+                lsh_dict[key] = i
 
-        arr = np.array(arr)
-        eq_mat = arr.T
-
-
-    else:
-        lsh_dict = {}
-        for j in range(col):
-            if j%100 == 0:
-                print("Current column is "+str(j))
-            for i in range(1, row):
-                key = str(j)+", "+str(lsh_list[i][j])
-                if key in lsh_dict:
-                    eq_mat[i][j] = lsh_dict[key]
-                else:
-                    lsh_dict[key] = i
-
-
-    # if parallel:
-    #     self.subtrees = Parallel(n_jobs=16)(
-    #         delayed(eq_matrix_one_col)(eq_mat, j, lsh_list, row)
-    #         for j in range(col))
-    #     # for subtree_iter in self.subtrees:
-    #     #     print("total depth "+str(subtree_iter.depth))
-    #     self.total_nodes = sum([st.num_nodes for st in self.subtrees])
-    # else:
-    #     for j in range(col):
-    #         for i in range(1, row):
-    #             arg_min = 0
-    #             for k in range(i):
-    #                 if lsh_list[k][j] == lsh_list[i][j]:
-    #                     arg_min = k+1
-    #                     break
-    #             eq_mat[i][j] = arg_min
-    # pool = multiprocessing.Pool(processes=16)
-    # pool.map(eq_matrix_one_col, args = (range(10), lsh_list, row))
-    # pool.close()
-    # pool.join()
-    #
     return eq_mat
 
 def is_valid_eq(eq_mat, k):
@@ -93,7 +94,7 @@ def is_valid_eq(eq_mat, k):
             #max_nonzero_count.append(k)
             failed_rows += 1
             #break
-    print("Max nonzero count per row: " + str(max_nonzero_count))
+    #print("Max nonzero count per row: " + str(max_nonzero_count))
     print("Max nonzero count per matrix: " + str(max(max_nonzero_count)))
     print("Number of nonzero rows: " + str(nonzero_rows))
     print("Number of failed rows: " + str(failed_rows))

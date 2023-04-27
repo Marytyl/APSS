@@ -13,7 +13,7 @@ from LSH import LSH
 
 
 from b4_objs import node_data, Iris, to_iris
-from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict
+from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict, gen_eq_matrix_parallel
 from search import search_query_dict
 
 
@@ -61,20 +61,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=18)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=12)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=255)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=1500)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=20)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=26)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
     n = args.nb_eLSHes  # number of eLSHes to calculate
     k = args.nb_matches_needed  # number of needed matches
+    just_eq_matrix = 1
     vec_size = 1024  # vector size
     t = args.same_t
     q = args.nb_queries
@@ -106,6 +107,10 @@ if __name__ == '__main__':
 
         success = 1
         counter = 0
+        if just_eq_matrix:
+            gen_eq_matrix_parallel(M, n, data, s, vec_size)
+            exit(0)
+
         while success != 0:
             t_start = time.time()
             eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
@@ -132,6 +137,7 @@ if __name__ == '__main__':
             counter += 1
             print("iteration: "+str(counter))
 
+        exit(1)
         t_start = time.time()
         codes = sample_codes(n, k, M, eq)
         t_end = time.time()
