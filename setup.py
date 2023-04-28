@@ -10,7 +10,7 @@ from functools import partial
 
 
 #num_cores = mp.cpu_count()
-num_cores=16
+num_cores = 16
 
 def eq_matrix_one_col(dataset, s, vec_size):
     r = .85
@@ -35,21 +35,12 @@ def gen_eq_matrix_parallel(M, n, dataset, s, vec_size):
     eq_col = Parallel(n_jobs=num_cores)(delayed(eq_matrix_one_col)
                                                 (dataset, s, vec_size)
                                                 for i in range(n))
-    print(type(eq_col))
-    print(len(eq_col))
-    eq_matrix = []
-    for col in eq_col:
-        eq_matrix.extend(col)
-    # return matches
-    # r=.85
-    # c=50/85
-    # eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
-    # lsh = eLSH.hashes
-    # lsh_list = compute_eLSH(data)
-    # t_end = time.time()
-    # t_lsh = t_end - t_start
-    # print("Successfully generated LSH evaluations in " + str(t_lsh) + " seconds")
-
+    eq_matrix = [[0 for i in range(n)] for j in range(M)]
+    for j in range(len(eq_col)):
+        col = eq_col[j]
+        for i in range(len(col)):
+            eq_matrix[i][j] = col[i]
+    return eq_matrix
 
 def gen_eq_matrix(M, n, lsh_list):
     parallel = 0
