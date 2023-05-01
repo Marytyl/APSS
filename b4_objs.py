@@ -6,7 +6,6 @@ import math, os, sys
 import eLSH as eLSH_import
 from LSH import LSH
 import pickle
-from Crypto.Util.Padding import pad, unpad
 
 class node_data(object):
     def __init__(self, bloom_filter, children, left_max_lsh=None):

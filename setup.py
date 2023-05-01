@@ -10,7 +10,7 @@ from functools import partial
 
 
 #num_cores = mp.cpu_count()
-num_cores = 16
+num_cores = 32
 
 def eq_matrix_one_col(dataset, s, vec_size):
     r = .85
