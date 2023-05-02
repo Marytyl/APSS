@@ -1,5 +1,5 @@
 import numpy as np
-import unireedsolomon as rs
+# import unireedsolomon as rs
 import map as m
 import multiprocessing as mp
 import eLSH as eLSH_import
@@ -7,6 +7,11 @@ from joblib import Parallel, delayed
 from LSH import LSH
 import secrets
 from functools import partial
+from os import path
+import sys
+sys.path.append(path.abspath('./ReedSolomon'))
+
+from ReedSolomon import rs
 
 
 #num_cores = mp.cpu_count()
@@ -96,6 +101,7 @@ def sample_codes(n, k, M, eq):
     # rsc = RSCodec(n)
     codes = []
     for i in range(M):
+        print(i)
         c = coder.encode(str(i))
         # c = rsc.encode(str(i))
 
