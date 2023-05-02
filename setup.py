@@ -93,9 +93,12 @@ def is_valid_eq(eq_mat, k):
 
 def sample_codes(n, k, M, eq):
     coder = rs.RSCoder(n, k)
+    # rsc = RSCodec(n)
     codes = []
     for i in range(M):
         c = coder.encode(str(i))
+        # c = rsc.encode(str(i))
+
         c = list(c)
         for j in range(len(c)):
             index = eq[i][j]
