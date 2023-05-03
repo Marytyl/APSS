@@ -23,10 +23,10 @@ class GF256int(int):
     # logtable = list(open('ReedSolomon/gf216log.txt').read())
     logtable = []
     logtable.append(None)
-    with open('ReedSolomon/gf216log.txt') as f:
-        for line in f:
-            for s in line.split(', '):
-                logtable.append(int(s))
+    with open('ReedSolomon/gf216log.txt') as g:
+        for line in g:
+            for r in line.split(', '):
+                logtable.append(int(r))
 
 
     def __new__(cls, value):
@@ -45,6 +45,7 @@ class GF256int(int):
 
     def __add__(a, b):
         "Addition in GF(2^8) is the xor of the two"
+        a = GF256int(a)
         b = GF256int(b)
         return GF256int(a ^ b)
     __sub__ = __add__
