@@ -53,21 +53,21 @@ class RSCoder(object):
         # α is 3, a generator for GF(2^8)
         g = Polynomial((GF256int(1),))
         for alpha in range(1,n-k+1):
-            p = Polynomial((GF256int(1), GF256int(3)**alpha))
+            p = Polynomial((GF256int(1), GF256int(2)**alpha))
             g = g * p
         self.g = g
 
         # h(x) = (x-α^(n-k+1))...(x-α^n)
         h = Polynomial((GF256int(1),))
         for alpha in range(n-k+1,n+1):
-            p = Polynomial((GF256int(1), GF256int(3)**alpha))
+            p = Polynomial((GF256int(1), GF256int(2)**alpha))
             h = h * p
         self.h = h
 
         # g*h is used in verification, and is always x^n-1
         # TODO: This is hardcoded for (255,223)
         # But it doesn't matter since my verify method doesn't use it
-        self.gtimesh = Polynomial(x255=GF256int(1), x0=GF256int(1))
+        self.gtimesh = Polynomial(x65535=GF256int(1), x0=GF256int(1))
 
     def encode(self, message, poly=False):
         """Encode a given string with reed-solomon encoding. Returns a byte
@@ -97,6 +97,7 @@ class RSCoder(object):
         # mprime = q*g + b for some q
         # so let's find b:
         b = mprime % self.g
+
 
         # Subtract out b, so now c = q*g
         c = mprime - b
@@ -172,7 +173,7 @@ class RSCoder(object):
 
         # Put the error and locations together to form the error polynomial
         Elist = []
-        for i in range(255):
+        for i in range(65535):
             if i in j:
                 Elist.append(Y[j.index(i)])
             else:
@@ -205,7 +206,7 @@ class RSCoder(object):
         # α in this implementation is 3
         s = [GF256int(0)] # s[0] is 0 (coefficient of z^0)
         for l in range(1, n-k+1):
-            s.append( r.evaluate( GF256int(3)**l ) )
+            s.append( r.evaluate( GF256int(2)**l ) )
 
         # Now build a polynomial out of all our s[l] values
         # s(z) = sum(s_i * z^i, i=1..inf)
@@ -328,14 +329,14 @@ class RSCoder(object):
         """
         X = []
         j = []
-        p = GF256int(3)
-        for l in xrange(1,256):
+        p = GF256int(2)
+        for l in range(1,65535):
             # These evaluations could be more efficient, but oh well
             if sigma.evaluate( p**l ) == 0:
                 X.append( p**(-l) )
                 # This is different than the notes, I think the notes were in error
                 # Notes said j values were just l, when it's actually 255-l
-                j.append(255 - l)
+                j.append(65535 - l)
 
         return X, j
 
@@ -369,10 +370,10 @@ class RSCoder(object):
 
 if __name__ == "__main__":
     import sys
-    coder = RSCoder(255,223)
+    coder = RSCoder(65535,223)
     if "-d" in sys.argv:
         method = coder.decode
-        blocksize = 255
+        blocksize = 65535
     else:
         method = coder.encode
         blocksize = 223
