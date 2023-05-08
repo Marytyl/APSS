@@ -1,4 +1,8 @@
-import unireedsolomon as rs
+# import unireedsolomon as rs
+from os import path
+import sys
+sys.path.append(path.abspath('./ReedSolomon'))
+from ReedSolomon import rs
 
 #from reedsolo import RSCodec, ReedSolomonError
 
