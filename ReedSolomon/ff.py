@@ -29,10 +29,12 @@ class GF256int(int):
                 logtable.append(int(r))
 
 
-    def __new__(cls, value):
+    def __new__(cls, value: int):
         # Check cache
         # Caching sacrifices a bit of speed for less memory usage. This way,
         # there are only a max of 256 instances of this class at any time.
+        print(type(value))
+        print(value)
         try:
             return GF256int.cache[value]
         except KeyError:
@@ -45,9 +47,19 @@ class GF256int(int):
 
     def __add__(a, b):
         "Addition in GF(2^8) is the xor of the two"
-        a = GF256int(a)
-        b = GF256int(b)
-        return GF256int(a ^ b)
+        a_int = int(a)
+        b_int = int(b)
+        print ("Calling add")
+        print (a_int)
+        print (b_int)
+        print (b_int.to_bytes(8, "little"))
+        xor_value = a_int ^ b_int
+        print(type(a_int))
+        print(type(b_int))
+        print(" a "+str(a_int)+" b "+str(b_int))
+        print(type(xor_value))
+        print(" sum "+str(xor_value))
+        return GF256int(int(a_int ^ b_int))
     __sub__ = __add__
     __radd__ = __add__
     __rsub__ = __add__

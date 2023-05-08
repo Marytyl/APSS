@@ -81,7 +81,8 @@ class Polynomial(object):
         else:
             t1 = (0,) * (-diff) + self.coefficients
             t2 = other.coefficients
-
+        print(t1)
+        print(t2)
         return self.__class__(x+y for x, y in zip(t1, t2))
 
     def __neg__(self):
@@ -117,6 +118,7 @@ class Polynomial(object):
         """
         class_ = dividend.__class__
 
+        print("Doing polynomial division")
         # See how many times the highest order term
         # of the divisor can go into the highest order term of the dividend
 
@@ -134,10 +136,21 @@ class Polynomial(object):
 
         # Compute how many times the highest order term in the divisor goes
         # into the dividend
+        print(type(dividend_coefficient))
+        print(type(divisor_coefficient))
         quotient_coefficient = dividend_coefficient / divisor_coefficient
+        print("type of quotient coefficient "+str(type(quotient_coefficient)))
         quotient = class_( (quotient_coefficient,) + (0,) * quotient_power )
 
+        print(divisor.coefficients[0])
+        print(quotient.coefficients[0])
+        print("Type divisor "+str(type(divisor)))
+        print("Type quotient "+str(type(quotient)))
+        print(str(type(quotient*divisor)))
+        c = quotient* divisor
+        print(c.coefficients[0])
         remander = dividend - quotient * divisor
+        print(type(remander))
 
         if remander.coefficients == (0,):
             # Goes in evenly with no remainder, we're done
