@@ -88,6 +88,7 @@ class GF256int(int):
         return GF256int(GF256int.exptable[65535 - e])
 
     def __div__(self, other):
+        print("Calling the proper division")
         return self * GF256int(other).inverse()
     def __rdiv__(self, other):
         return self.inverse() * other
