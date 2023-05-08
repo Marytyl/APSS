@@ -90,6 +90,7 @@ class GF256int(int):
     def __div__(self, other):
         print("Calling the proper division")
         return self * GF256int(other).inverse()
+    __truediv__ = __div__
     def __rdiv__(self, other):
         return self.inverse() * other
 
