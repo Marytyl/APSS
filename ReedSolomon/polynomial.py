@@ -3,17 +3,19 @@
 
 from io import StringIO
 
+
 class Polynomial(object):
     """Completely general polynomial class.
-    
+
     Polynomial objects are immutable.
-    
+
     Implementation note: while this class is mostly agnostic to the type of
     coefficients used (as long as they support the usual mathematical
     operations), the Polynomial class still assumes the additive identity and
     multiplicative identity are 0 and 1 respectively. If you're doing math over
     some strange field or using non-numbers as coefficients, this class will
     need to be modified."""
+
     def __init__(self, coefficients=(), **sparse):
         """
         There are three ways to initialize a Polynomial object.
@@ -32,12 +34,12 @@ class Polynomial(object):
         >>> print Polynomial(x32=5, x64=8)
         8x^64 + 5x^32
 
-        >>> print Polynomial(x5=5, x9=4, x0=2) 
+        >>> print Polynomial(x5=5, x9=4, x0=2)
         4x^9 + 5x^5 + 2
         """
         if coefficients and sparse:
             raise TypeError("Specify coefficients list /or/ keyword terms, not"
-                    " both")
+                            " both")
         if coefficients:
             # Polynomial((1, 2, 3, ...))
             c = list(coefficients)
@@ -55,7 +57,7 @@ class Polynomial(object):
             # Not catching possible exceptions from the following line, let
             # them bubble up.
             highest = int(powers[0][1:])
-            coefficients = [0] * (highest+1)
+            coefficients = [0] * (highest + 1)
 
             for power, coeff in sparse.items():
                 power = int(power[1:])
@@ -69,6 +71,7 @@ class Polynomial(object):
     def __len__(self):
         """Returns the number of terms in the polynomial"""
         return len(self.coefficients)
+
     def degree(self):
         """Returns the degree of the polynomial"""
         return len(self.coefficients) - 1
@@ -81,15 +84,16 @@ class Polynomial(object):
         else:
             t1 = (0,) * (-diff) + self.coefficients
             t2 = other.coefficients
-        print(t1)
-        print(t2)
-        return self.__class__(x+y for x, y in zip(t1, t2))
+        # print(t1)
+        # print(t2)
+        return self.__class__(x + y for x, y in zip(t1, t2))
 
     def __neg__(self):
         return self.__class__(-x for x in self.coefficients)
+
     def __sub__(self, other):
         return self + -other
-            
+
     def __mul__(self, other):
         terms = [0] * (len(self) + len(other))
 
@@ -98,12 +102,13 @@ class Polynomial(object):
                 # Optimization
                 continue
             for i2, c2 in enumerate(reversed(other.coefficients)):
-                terms[i1+i2] += c1*c2
+                terms[i1 + i2] += c1 * c2
 
         return self.__class__(reversed(terms))
 
     def __floordiv__(self, other):
         return divmod(self, other)[0]
+
     def __mod__(self, other):
         return divmod(self, other)[1]
 
@@ -127,50 +132,75 @@ class Polynomial(object):
 
         divisor_power = divisor.degree()
         divisor_coefficient = divisor.coefficients[0]
-
         quotient_power = dividend_power - divisor_power
         if quotient_power < 0:
             # Doesn't divide at all, return 0 for the quotient and the entire
             # dividend as the remainder
+            print("Not dev")
             return class_((0,)), dividend
 
-        # Compute how many times the highest order term in the divisor goes
-        # into the dividend
-        print(type(dividend_coefficient))
-        print(type(divisor_coefficient))
-        quotient_coefficient = dividend_coefficient / divisor_coefficient
-        print("type of quotient coefficient "+str(type(quotient_coefficient)))
-        quotient = class_( (quotient_coefficient,) + (0,) * quotient_power )
-
-        print(divisor.coefficients[0])
-        print(quotient.coefficients[0])
-        print("Type divisor "+str(type(divisor)))
-        print("Type quotient "+str(type(quotient)))
-        print(str(type(quotient*divisor)))
-        c = quotient* divisor
-        print(c.coefficients[0])
-        remander = dividend - quotient * divisor
-        print(type(remander))
-
-        if remander.coefficients == (0,):
-            # Goes in evenly with no remainder, we're done
+        elif quotient_power >= 0:
+            remander = dividend
+            quotient = class_((0,))
+            while remander.coefficients != (0,) and divisor_power <= remander.degree():
+                print("divisor:", divisor)
+                quotient_coefficient = remander.coefficients[0] / divisor_coefficient
+                quotient_power = remander.degree() - divisor_power
+                quotient = quotient + class_((quotient_coefficient,) + (0,) * quotient_power)
+                remander = remander - quotient * divisor
+                print("remander: ", remander)
+                print("quotient: ", quotient)
+                print("quotient * divisor:", quotient * divisor)
+            print("q, r:", quotient, remander)
             return quotient, remander
 
-        # There was a remainder, see how many times the remainder goes into the
-        # divisor
-        morequotient, remander = divmod(remander, divisor)
-        return quotient + morequotient, remander
+        # quotient_power = dividend_power - divisor_power
+
+
+
+        # # Compute how many times the highest order term in the divisor goes
+        # # into the dividend
+        # print(type(dividend_coefficient))
+        # print(type(divisor_coefficient))
+        # quotient_coefficient = dividend_coefficient / divisor_coefficient
+        # print("type of quotient coefficient " + str(type(quotient_coefficient)))
+        # quotient = class_((quotient_coefficient,) + (0,) * quotient_power)
+        #
+        # print(divisor.coefficients[0])
+        # print(quotient.coefficients[0])
+        # print("Type divisor " + str(type(divisor)))
+        # print("Type quotient " + str(type(quotient)))
+        # print(str(type(quotient * divisor)))
+        # c = quotient * divisor
+        # print(c.coefficients[0])
+        # remander = dividend - quotient * divisor
+        # print(type(remander))
+        #
+        # if remander.coefficients == (0,):
+        #     # Goes in evenly with no remainder, we're done
+        #     return quotient, remander
+        #
+        # # There was a remainder, see how many times the remainder goes into the
+        # # divisor
+        # morequotient, remander = divmod(remander, divisor)
+        # return quotient + morequotient, remander
+
+
+
 
     def __eq__(self, other):
         return self.coefficients == other.coefficients
+
     def __ne__(self, other):
         return self.coefficients != other.coefficients
+
     def __hash__(self):
         return hash(self.coefficients)
 
     def __repr__(self):
         n = self.__class__.__name__
         return "%s(%r)" % (n, self.coefficients)
+
     def __str__(self):
         buf = StringIO()
         l = len(self) - 1
@@ -210,4 +240,4 @@ class Polynomial(object):
         if degree > self.degree():
             return 0
         else:
-            return self.coefficients[-(degree+1)]
+            return self.coefficients[-(degree + 1)]
