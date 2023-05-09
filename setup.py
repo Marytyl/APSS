@@ -9,9 +9,8 @@ import secrets
 from functools import partial
 from os import path
 import sys
-sys.path.append(path.abspath('./ReedSolomon'))
-
-from ReedSolomon import rs
+sys.path.append(path.abspath('./UniReedSolomonm'))
+from UniReedSolomonm import rs
 
 
 #num_cores = mp.cpu_count()
