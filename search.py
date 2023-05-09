@@ -1,8 +1,8 @@
 # import unireedsolomon as rs
 from os import path
 import sys
-sys.path.append(path.abspath('./ReedSolomon'))
-from ReedSolomon import rs
+sys.path.append(path.abspath('./UniReedSolomonm'))
+from UniReedSolomonm import rs
 
 #from reedsolo import RSCodec, ReedSolomonError
 
@@ -38,16 +38,17 @@ def search_query_dict(l_q, lsh_list, k, dict):
     if n - erase < k:
         return ("No match")
     codeword = ""
-    print(c)
+    print("c:", c)
     for char in c:
         if char is not None:
             codeword += char
         else:
             codeword += ""
+    print("codeword: ", codeword)
     coder = rs.RSCoder(n, k)
     # coder = RSCodec(n)
-    dec= coder.decode(codeword)
-
+    dec = coder.decode(codeword, erasures_pos=0)
+    print("dec", dec)
     return(dec[0])
 
 
