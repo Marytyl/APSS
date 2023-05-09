@@ -44,7 +44,7 @@ def search_query_dict(l_q, lsh_list, k, dict):
             codeword += char
         else:
             codeword += ""
-    print("codeword: ", codeword)
+    # print("codeword: ", codeword)
     coder = rs.RSCoder(n, k)
     # coder = RSCodec(n)
     dec = coder.decode(codeword, erasures_pos=0)
