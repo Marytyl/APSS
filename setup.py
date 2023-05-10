@@ -55,8 +55,8 @@ def gen_eq_matrix(M, n, lsh_list):
 
     lsh_dict = {}
     for j in range(col):
-        if j%100 == 0:
-            print("Current column is "+str(j))
+        # if j%100 == 0:
+        #     print("Current column is "+str(j))
         for i in range(1, row):
             key = str(j)+", "+str(lsh_list[i][j])
             if key in lsh_dict:
@@ -96,21 +96,22 @@ def is_valid_eq(eq_mat, k):
     return flag
 
 def sample_codes(n, k, M, eq):
-    coder = rs.RSCoder(n, k)
+    coder = rs.RSCoder(n+1, k)
     # rsc = RSCodec(n)
     codes = []
     for i in range(M):
-        print(i)
+
         c = coder.encode(str(i))
         # c = rsc.encode(str(i))
 
         c = list(c)
-        for j in range(len(c)):
+        c[0] = chr(i)
+        for j in range(len(c)-1):
             index = eq[i][j]
             if index != 0:
-                c[j] = codes[index][j+1]
-        codes.append(chr(i))
-        for j in range(len(c)):
+                c[j+1] = codes[index][j]
+        codes.append(c[0])
+        for j in range(1, len(c)):
             if c[j] != None:
                 codes[i] += c[j]
     return codes
