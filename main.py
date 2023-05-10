@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import eLSH as eLSH_import
 from LSH import LSH
 
+from os import path
+import sys
+sys.path.append(path.abspath('./UniReedSolomonm'))
+from UniReedSolomonm import rs
 
 
 from b4_objs import node_data, Iris, to_iris
@@ -17,7 +21,7 @@ from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict, gen_eq_mat
 from search import search_query_dict
 
 def sample_errors(vector_size):
-    mean_same = 0.05
+    mean_same = 0.21
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
@@ -33,6 +37,8 @@ def sample_errors(vector_size):
 def build_rand_dataset(M, vec_size, t, show_hist = False):
     dataset = []
     queries = []
+    queries_error_fraction = []
+    queries_error_nb = []
     errors_table = []
     for i in range(M):
         feature = [random.getrandbits(1) for i in range(vec_size)]
@@ -43,8 +49,11 @@ def build_rand_dataset(M, vec_size, t, show_hist = False):
 
         # sample errors from distribution
         nb_errors, fraction = sample_errors(vec_size)
+        queries_error_fraction.append(fraction)
+        queries_error_nb.append(nb_errors)
         # print("Errors from normal distribution : " + str(nb_errors))
         errors_table.append(nb_errors)
+
         # randomly sample error bits to be inverted
         error_bits = random.sample(range(vec_size), nb_errors)
         for b in error_bits:
@@ -65,7 +74,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False):
         #     build_show_histogram(dataset, queries)
         # # print(errors_table)
         # plt.plot(errors_table)
-    return dataset, queries
+    return dataset, queries, queries_error_fraction, queries_error_nb
 
 # def put_elements_map(element, output):  # puts elements in hash_to_iris
 #     for index, h in enumerate(output):
@@ -99,6 +108,14 @@ def show_plot(x_axis, y_axis, x_label, y_label, title):
     plt.savefig(title)
 
 if __name__ == '__main__':
+    # coder = rs.RSCoder(631, 32)
+    # c = coder.encode("5")
+    # r = "\0" + "\uf562"*299 + c[300:630] + "\0"
+    # # print(r)
+    # # coder = rs.RSCoder(20, 13)
+    # d = coder.decode(r)
+    # print(d)
+
     print(sys.version)
 
     parser = argparse.ArgumentParser()
@@ -107,7 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=17)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=255)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=631)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
@@ -137,7 +154,7 @@ if __name__ == '__main__':
     if args.dataset == "rand" or args.dataset == "all":
 
         t_start = time.time()
-        random_data, queries = build_rand_dataset(M, vec_size, t)
+        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t)
         t_end = time.time()
         t_dataset = t_end - t_start
         print("Successfully generated random data in "+str(t_dataset)+" seconds")
@@ -196,14 +213,14 @@ if __name__ == '__main__':
         t_end = time.time()
         t_code_sampling = t_end - t_start
         print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
-
+        # print(codes)
         dict = gen_dict(codes, M, n, lsh_list)
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
 
         for j in range(len(queries_lsh_list)):
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict))
+            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
 
 
 
