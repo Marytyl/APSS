@@ -268,6 +268,7 @@ class RSCoder(object):
         if isinstance(r, _str):
             r = [ord(x) for x in r]
 
+        # print(r)
         # Turn r into a polynomial
         rp = Polynomial([GF2int(x) for x in r])
 
@@ -821,8 +822,8 @@ class RSCoder(object):
         # Sanity check: the number of errors/errata positions found should be exactly the same as the length of the errata locator polynomial
         errs_nb = len(sigma) - 1 # compute the exact number of errors/errata that this error locator should find
         if len(j) != errs_nb:
-            raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
-
+            # raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            return("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
         return X, j
 
     def _chien_search_fast(self, sigma):
@@ -883,8 +884,8 @@ class RSCoder(object):
         errs_nb = len(sigma) - 1 # compute the exact number of errors/errata that this error locator should find
         if len(j) != errs_nb:
             # Note: decoding messages+ecc with length n > self.gf2_charac does work partially, but it's wrong, because you will get duplicated values, and then Chien Search cannot discriminate which root is correct and which is not. The duplication of values is normally prevented by the prime polynomial reduction when generating the field (see init_lut() in ff.py), but if you overflow the field, you have no guarantee anymore. We may try to use a bruteforce approach: the correct positions ARE in the final array j, but the problem is because we are above the Galois Field's range, there is a wraparound because of overflow so that for example if j should be [0, 1, 2, 3], we will also get [255, 256, 257, 258] (because 258 % 255 == 3, same for the other values), so we can't discriminate. The issue with that bruteforce approach is that fixing any errs_nb errors among those will always give a correct output message (in the sense that the syndrome will be all 0), so we may not even be able to check if that's correct or not, so there's clearly no way to decode a message of greater length than the field.
-            raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
-
+            # raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            return ("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
         return X, j
 
     def _old_forney(self, omega, X, k=None):
