@@ -52,8 +52,11 @@ def search_query_dict(l_q, lsh_list, k, dict):
 
     coder = rs.RSCoder(n+1, k)
     # coder = RSCodec(n)
-    dec = coder.decode(codeword, erasures_pos=erasure_pos)
+    dec = coder.decode(codeword, erasures_pos=erasure_pos, only_erasures=False)
     # print("dec", dec)
-    return dec[0], erase
+    if dec != None:
+        return dec[0], erase
+    else:
+        return None, erase
 
 
