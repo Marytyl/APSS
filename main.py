@@ -21,7 +21,7 @@ from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict, gen_eq_mat
 from search import search_query_dict
 
 def sample_errors(vector_size):
-    mean_same = 0.21
+    mean_same = 0.15
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
@@ -44,7 +44,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False):
         feature = [random.getrandbits(1) for i in range(vec_size)]
         dataset.append(feature)
 
-    for i in range(50):
+    for i in range(100):
         query = dataset[i][:]  # need to be careful to copy value ! (keep the [:] !!)
 
         # sample errors from distribution
@@ -120,16 +120,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
-    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=17)
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=10000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=24)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=631)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=5012)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=32)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=33)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
@@ -139,8 +139,8 @@ if __name__ == '__main__':
     vec_size = 1024  # vector size
     t = args.same_t
     q = args.nb_queries
-    r = 0.9#math.floor(t * n)
-    c = 50/90#args.diff_t * (n / r)
+    r = 0.85#math.floor(t * n)
+    c = 50/85#args.diff_t * (n / r)
     s = args.lsh_size
 
 
@@ -214,7 +214,12 @@ if __name__ == '__main__':
         t_code_sampling = t_end - t_start
         print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
         # print(codes)
+
+        t_start = time.time()
         dict = gen_dict(codes, M, n, lsh_list)
+        t_end = time.time()
+        t_dict = t_end - t_start
+        print("Successfully generated dictionary in " + str(t_dict) + " seconds")
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
