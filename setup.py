@@ -101,7 +101,7 @@ def sample_codes(n, k, M, eq):
     codes = []
     for i in range(M):
 
-        c = coder.encode(str(i))
+        c = coder.encode_fast(str(i))
         # c = rsc.encode(str(i))
 
         c = list(c)
