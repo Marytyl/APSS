@@ -130,6 +130,8 @@ if __name__ == '__main__':
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
     parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=33)
+    parser.add_argument('--eps_t', help="TPR of each eLSH", type=int, default=85)
+    parser.add_argument('--eps_f', help="FPR of each eLSH", type=int, default=50)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
@@ -139,8 +141,9 @@ if __name__ == '__main__':
     vec_size = 1024  # vector size
     t = args.same_t
     q = args.nb_queries
-    r = 0.85#math.floor(t * n)
-    c = 50/85#args.diff_t * (n / r)
+
+    r = args.eps_t/100#0.85#math.floor(t * n)
+    c = args.eps_f/args.eps_t#50/85#args.diff_t * (n / r)
     s = args.lsh_size
 
 
