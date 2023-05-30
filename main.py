@@ -7,6 +7,7 @@ import random
 import time
 import matplotlib.pyplot as plt
 
+
 import eLSH as eLSH_import
 from LSH import LSH
 
@@ -20,8 +21,9 @@ from b4_objs import node_data, Iris, to_iris
 from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict, gen_eq_matrix_parallel
 from search import search_query_dict
 
-def sample_errors(vector_size):
-    mean_same = 0.15
+def sample_errors(vector_size, error_rate=0.1):
+
+    mean_same = error_rate
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
@@ -34,7 +36,7 @@ def sample_errors(vector_size):
     nb_errors = round(vector_size * error_fraction)
     return nb_errors, round(error_fraction, 3)
 
-def build_rand_dataset(M, vec_size, t, show_hist = False):
+def build_rand_dataset(M, vec_size, t, show_hist = False, error_rate=0.1):
     dataset = []
     queries = []
     queries_error_fraction = []
@@ -48,7 +50,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False):
         query = dataset[i][:]  # need to be careful to copy value ! (keep the [:] !!)
 
         # sample errors from distribution
-        nb_errors, fraction = sample_errors(vec_size)
+        nb_errors, fraction = sample_errors(vec_size, error_rate)
         queries_error_fraction.append(fraction)
         queries_error_nb.append(nb_errors)
         # print("Errors from normal distribution : " + str(nb_errors))
@@ -105,33 +107,27 @@ def show_plot(x_axis, y_axis, x_label, y_label, title):
     plt.xlabel(y_label)
     plt.title("")
     plt.show()
-    plt.savefig(title)
+    # plt.savefig(title)
 
 if __name__ == '__main__':
-    # coder = rs.RSCoder(631, 32)
-    # c = coder.encode("5")
-    # r = "\0" + "\uf562"*299 + c[300:630] + "\0"
-    # # print(r)
-    # # coder = rs.RSCoder(20, 13)
-    # d = coder.decode(r)
-    # print(d)
 
     print(sys.version)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=10000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=24)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=21)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=5012)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=1000)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=33)
-    parser.add_argument('--eps_t', help="TPR of each eLSH", type=int, default=85)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=24)
+    parser.add_argument('--eps_t', help="TPR of each eLSH", type=int, default=90)
     parser.add_argument('--eps_f', help="FPR of each eLSH", type=int, default=50)
+    parser.add_argument('--error_rate_percent', help="mean error rate", type=float, default=10)
     args = parser.parse_args()
 
     M = args.dataset_size  # dataset size
@@ -146,18 +142,23 @@ if __name__ == '__main__':
     c = args.eps_f/args.eps_t#50/85#args.diff_t * (n / r)
     s = args.lsh_size
 
+    error_rate = args.error_rate_percent/100
+
 
     branching_factor = 2
     root_bf_fpr = args.root_bf_fp
     internal_bf_fpr = args.internal_bf_fp
     lsh_size = args.lsh_size  # LSH output size
+    # max_nonzero_count = [0 for i in range(100)]
+    # max_nonzero_rows = [0 for i in range(100)]
+    # failed_rows = [0 for i in range(100)]
 
     query = None
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
 
         t_start = time.time()
-        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t)
+        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t, error_rate)
         t_end = time.time()
         t_dataset = t_end - t_start
         print("Successfully generated random data in "+str(t_dataset)+" seconds")
@@ -209,38 +210,43 @@ if __name__ == '__main__':
             counter += 1
             print("iteration: "+str(counter))
 
-        if just_eq_matrix:
-            exit(1)
-        t_start = time.time()
-        codes = sample_codes(n, k, M, eq)
-        t_end = time.time()
-        t_code_sampling = t_end - t_start
-        print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
-        # print(codes)
 
-        t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list)
-        t_end = time.time()
-        t_dict = t_end - t_start
-        print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+            t_start = time.time()
+            codes = sample_codes(n, k, M, eq)
+            t_end = time.time()
+            t_code_sampling = t_end - t_start
+            print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
+            # print(codes)
 
-        #l_query = compute_eLSH(query)
-        #l_query = lsh_list[1]
+            t_start = time.time()
+            dict = gen_dict(codes, M, n, lsh_list)
+            t_end = time.time()
+            t_dict = t_end - t_start
+            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
 
-        for j in range(len(queries_lsh_list)):
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            #l_query = compute_eLSH(query)
+            #l_query = lsh_list[1]
 
+            for j in range(len(queries_lsh_list)):
+                print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
 
 
-        # x_axis = [i+1 for i in range(10)]
-        # y_axis = [12, 12, 11, 12, 13, 10, 13, 12, 13, 12, 13, 11, 13, 11, 13, 14, 11, 11, 13, 10, 15, 12, 13, 13, 14]
-        # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
-        #           "Histogram of Maximum number of matches, M=10^3")
-        #
-        # x_axis = [i + 1 for i in range(10)]
-        # y_axis = [14, 14, 15, 14, 15, 14, 13, 15, 14, 14, 17, 16, 16, 15, 14, 14, 15, 17, 14, 13]
-        # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
-        #           "Histogram of Maximum number of matches, M=10^4")
+
+    # x_axis = [i+1 for i in range(100)]
+    # y_axis = max_nonzero_count
+    # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
+    #           "Histogram of Maximum number of matches, M=10^3")
+    # print("******")
+    # print(max_nonzero_count)
+    # print("******")
+    # print(max_nonzero_rows)
+    # print("******")
+    # print(failed_rows)
+    # print("******")
+    # x_axis = [i + 1 for i in range(100)]
+    # y_axis = max_nonzero_count
+    # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
+    #           "Histogram of Maximum number of matches, M=10^4, c_1=5")
 
 
 
