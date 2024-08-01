@@ -144,23 +144,30 @@ def sample_codes(n, k, M, eq):
                 codes[i] += c[j]
     return codes
 
-def gen_dict(codes, M, n, lsh_list):
+def gen_dict(codes, M, n, lsh_list, map_type):
+
     dict = {}
     for i in range(M):
         for j in range(n):
             key = str(j) + ", " + str(lsh_list[i][j])
-            dict[key] = codes[i][j+1]
+            dict[key] = codes[i][j + 1]
+    if map_type == 'dict':
+        return dict
+    else:
+        omap = OMapE("./", total_accesses=1)
+        omap.apply(dict)
+        return omap
 
-    omap = OMapE("./", total_accesses=1)
-    omap.apply(dict)
 
-    return omap
+
+
+
+
 
 def gen_map(codes, M, n, lsh_list):
     for i in range(M):
         for j in range(n):
             m.insert(chr(j)+lsh_list[i](j), codes[i](j))
-
 
 
 

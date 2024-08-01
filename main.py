@@ -251,20 +251,21 @@ if __name__ == '__main__':
     print(sys.version)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='nd')
-    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=208)
+    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
-    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=500)
+    parser.add_argument('--nb_eLSHes', help="Number of eLSHes.", type=int, default=25)
     parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=208)
-    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=30)
+    parser.add_argument('--nb_matches_needed', help="Number of needed matches.", type=int, default=20)
     parser.add_argument('--eps_t', help="TPR of each eLSH", type=int, default=85)
     parser.add_argument('--eps_f', help="FPR of each eLSH", type=int, default=50)
     parser.add_argument('--error_rate_percent', help="mean error rate", type=float, default=15)
+    parser.add_argument('--map', help="Map to use.", type=str, default='omap')
     args = parser.parse_args()
 
     show_hist = bool(args.show_histogram)
@@ -275,6 +276,7 @@ if __name__ == '__main__':
     vec_size = 1024  # vector size
     t = args.same_t
     q = args.nb_queries
+    map_type = args.map
 
     r = args.eps_t/100#0.85#math.floor(t * n)
     c = args.eps_f/args.eps_t#50/85#args.diff_t * (n / r)
@@ -360,10 +362,13 @@ if __name__ == '__main__':
         # print(codes)
 
         t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list)
+        dict = gen_dict(codes, M, n, lsh_list, map_type)
         t_end = time.time()
         t_dict = t_end - t_start
-        print("Successfully generated ORAM dictionary in " + str(t_dict) + " seconds")
+        if map_type == 'dict':
+            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        else:
+            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
@@ -463,10 +468,13 @@ if __name__ == '__main__':
         # print(codes)
 
         t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list)
+        dict = gen_dict(codes, M, n, lsh_list, map_type)
         t_end = time.time()
         t_dict = t_end - t_start
-        print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        if map_type == 'dict':
+            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        else:
+            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
@@ -532,7 +540,7 @@ if __name__ == '__main__':
                 t_end = time.time()
                 t_lsh = t_end - t_start
                 print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds")
-                print("elsh", lsh_list)
+                # print("elsh", lsh_list)
                 # print("******************")
                 # print(len(lsh_list[0]), len(lsh_list))
                 t_start = time.time()
@@ -562,15 +570,26 @@ if __name__ == '__main__':
         # print(codes)
 
         t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list)
+        dict = gen_dict(codes, M, n, lsh_list, map_type)
         t_end = time.time()
         t_dict = t_end - t_start
-        print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        if map_type=='dict':
+            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        else:
+            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
+
+        t_search = [0]*len(queries_lsh_list)
         for j in range(len(queries_lsh_list)):
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict))
+            t_start = time.time()
+            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            t_end = time.time()
+            t_search[j] = t_end - t_start
+            print("Search Time: "+ t_search[j])
+
+        print("Average Search Time for "+ len(queries_lsh_list)+ "Queries is : "+ round(numpy.average(t_search),1) + " seconds.")
 
     # x_axis = [i+1 for i in range(100)]
     # y_axis = max_nonzero_count
@@ -587,7 +606,6 @@ if __name__ == '__main__':
     # y_axis = max_nonzero_count
     # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
     #           "Histogram of Maximum number of matches, M=10^4, c_1=5")
-
 
 
 
