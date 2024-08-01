@@ -378,6 +378,7 @@ if __name__ == '__main__':
             print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
             query_time.append(t_end - t_start)
+            print("Search Time: ", t_end - t_start)
 
         print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
 
@@ -587,9 +588,10 @@ if __name__ == '__main__':
             print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
             t_search[j] = t_end - t_start
-            print("Search Time: "+ t_search[j])
+            print("Search Time: ", t_search[j])
 
-        print("Average Search Time for "+ len(queries_lsh_list)+ "Queries is : "+ round(numpy.average(t_search),1) + " seconds.")
+        print("Average Search Time for ", len(queries_lsh_list), "Queries is : ", round(numpy.average(t_search),1) , " seconds.")
+        print("STD DEV Search Time for " , len(queries_lsh_list) , "Queries is : " , round(numpy.std(t_search),1) , " seconds.")
 
     # x_axis = [i+1 for i in range(100)]
     # y_axis = max_nonzero_count
