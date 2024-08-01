@@ -363,13 +363,18 @@ if __name__ == '__main__':
         dict = gen_dict(codes, M, n, lsh_list)
         t_end = time.time()
         t_dict = t_end - t_start
-        print("Successfully generated dictionary in " + str(t_dict) + " seconds")
+        print("Successfully generated ORAM dictionary in " + str(t_dict) + " seconds")
 
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
-
+        query_time = []
         for j in range(len(queries_lsh_list)):
+            t_start = time.time()
             print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            t_end = time.time()
+            query_time.append(t_end - t_start)
+
+        print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
 
 
 
@@ -527,7 +532,7 @@ if __name__ == '__main__':
                 t_end = time.time()
                 t_lsh = t_end - t_start
                 print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds")
-                # print("elsh", lsh_list)
+                print("elsh", lsh_list)
                 # print("******************")
                 # print(len(lsh_list[0]), len(lsh_list))
                 t_start = time.time()

@@ -12,6 +12,7 @@ import sys
 sys.path.append(path.abspath('./UniReedSolomonm'))
 from UniReedSolomonm import rs
 from collections import Counter
+from OMapE.b4_oram import OMapE
 
 
 #num_cores = mp.cpu_count()
@@ -149,7 +150,11 @@ def gen_dict(codes, M, n, lsh_list):
         for j in range(n):
             key = str(j) + ", " + str(lsh_list[i][j])
             dict[key] = codes[i][j+1]
-    return dict
+
+    omap = OMapE("./", total_accesses=1)
+    omap.apply(dict)
+
+    return omap
 
 def gen_map(codes, M, n, lsh_list):
     for i in range(M):

@@ -1,6 +1,7 @@
 # import unireedsolomon as rs
 from os import path
 import sys
+import OMapE
 sys.path.append(path.abspath('./UniReedSolomonm'))
 from UniReedSolomonm import rs
 
@@ -33,9 +34,9 @@ def search_query_dict(l_q, lsh_list, k, dict):
     erasure_pos = []
     erasure_pos.append(0)
     for j in range(n):
-        if str(j) + ", " + str(l_q[j]) in dict:
-            c[j+1] = dict[str(j) + ", " + str(l_q[j])]
-        if c[j+1] is not None:
+        res = dict[str(j) + ", " + str(l_q[j])]
+        if  res is not None:
+            c[j+1] = res
             erase -= 1
         else:
             erasure_pos.append(j+1)
