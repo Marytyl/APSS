@@ -1,0 +1,3 @@
+[submodule "OMapE"]
+	path = OMapE
+	url = git@github.com:benjaminfuller/OMapE.git
