@@ -373,7 +373,7 @@ if __name__ == '__main__':
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
         query_time = []
-        for j in range(len(queries_lsh_list)):
+        for j in range(min(len(queries_lsh_list),q)):
             t_start = time.time()
             print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
