@@ -17,8 +17,9 @@ import sys
 sys.path.append(path.abspath('./UniReedSolomonm'))
 from UniReedSolomonm import rs
 
-
 from b4_objs import node_data, Iris, to_iris
+# from OMapE.b4_objs import node_data
+
 from setup import gen_eq_matrix, is_valid_eq, sample_codes, gen_dict, gen_eq_matrix_parallel
 from search import search_query_dict
 
@@ -373,12 +374,12 @@ if __name__ == '__main__':
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
         query_time = []
-        for j in range(min(len(queries_lsh_list),q)):
+        for j in range(len(queries_lsh_list)):
             t_start = time.time()
             print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
             query_time.append(t_end - t_start)
-            print("Search Time: ", t_end - t_start,flush=True)
+            print("Search Time: ", t_end - t_start)
 
         print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
 
@@ -585,7 +586,7 @@ if __name__ == '__main__':
         t_search = [0]*len(queries_lsh_list)
         for j in range(len(queries_lsh_list)):
             t_start = time.time()
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict))
             t_end = time.time()
             t_search[j] = t_end - t_start
             print("Search Time: ", t_search[j])
