@@ -376,7 +376,7 @@ if __name__ == '__main__':
         query_time = []
         for j in range(len(queries_lsh_list)):
             t_start = time.time()
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            print(j, search_query_dict(queries_lsh_list[j], n, k, dict), queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
             query_time.append(t_end - t_start)
             print("Search Time: ", t_end - t_start)
@@ -482,7 +482,7 @@ if __name__ == '__main__':
         #l_query = lsh_list[1]
 
         for j in range(len(queries_lsh_list)):
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            print(j, search_query_dict(queries_lsh_list[j], n, k, dict), queries_error_nb[j], queries_error_fraction[j])
 
 
 
@@ -586,7 +586,7 @@ if __name__ == '__main__':
         t_search = [0]*len(queries_lsh_list)
         for j in range(len(queries_lsh_list)):
             t_start = time.time()
-            print(j, search_query_dict(queries_lsh_list[j], lsh_list, k, dict))
+            print(j, search_query_dict(queries_lsh_list[j], n, k, dict))
             t_end = time.time()
             t_search[j] = t_end - t_start
             print("Search Time: ", t_search[j])
