@@ -16,9 +16,9 @@
 #rm heap*
 
 # Real dataset
-python3 main.py --dataset_size=208 --lsh_size=25 --nb_eLSHes=2000 --nb_matches_needed=30  --error_rate_percent=10 --map='omap' --dataset='nd' --nb_queries=208 > nd_2000_25_30.txt
-ls -al heap* >> nd_2000_25_30.txt
-rm heap*
+#python3 main.py --dataset_size=208 --lsh_size=25 --nb_eLSHes=2000 --nb_matches_needed=30  --error_rate_percent=10 --map='omap' --dataset='nd' --nb_queries=208 > nd_2000_25_30.txt
+#ls -al heap* >> nd_2000_25_30.txt
+#rm heap*
 
 python3 main.py --dataset_size=208 --lsh_size=23 --nb_eLSHes=1000 --nb_matches_needed=25  --error_rate_percent=10 --map='omap' --dataset='nd' --nb_queries=208 > nd_1000_23_25.txt
 ls -al heap* >> nd_1000_30_25.txt

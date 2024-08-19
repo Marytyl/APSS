@@ -38,11 +38,19 @@ def search_query_dict(l_q, n, k, dict):
 
     coder = rs.RSCoder(n+1, k)
     # coder = RSCodec(n)
-    dec = coder.decode_fast(codeword, erasures_pos=erasure_pos, only_erasures=False)
+    dec, ecc = coder.decode_fast(codeword, erasures_pos=erasure_pos, only_erasures=False,nostrip=True)
+    full_corrected = dec + ecc
+    errors=0
+    for i in range(n+1):
+        if i in erasure_pos:
+            continue
+        elif full_corrected[i] != codeword[i]:
+            errors = errors+1
+    dec, ecc = coder.decode_fast(codeword, erasures_pos=erasure_pos, only_erasures=False)
     # print("dec", dec)
     if dec != None:
-        return dec[0], erase
+        return dec[0], erase, errors
     else:
-        return None, erase
+        return None, erase, errors
 
 

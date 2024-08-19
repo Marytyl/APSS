@@ -36,12 +36,13 @@ def sample_errors(vector_size, error_rate=0.1):
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
-    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
+#    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
+    n=1024
     p = mean_same
-    # print("p = " + str(p) + " and n = " + str(math.ceil(n)))
+#    print("p = " + str(p) + " and n = " + str(math.ceil(n)))
 
     error_fraction = scipy.stats.binom.rvs(math.ceil(n), p) / n
-    # print(error_fraction)
+#    print(error_fraction)
     nb_errors = round(vector_size * error_fraction)
     return nb_errors, round(error_fraction, 3)
 

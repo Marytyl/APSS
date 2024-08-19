@@ -447,7 +447,6 @@ class RSCoder(object):
             print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
             return
 
-
         # Sanity check: Cannot guarantee correct decoding of more than n-k errata (Singleton Bound, n-k being the minimum distance), and we cannot even check if it's correct (the syndrome will always be all 0 if we try to decode above the bound), thus it's better to just return the input as-is.
         if len(j) > n-k:
             ret = r[:-(n-k)]
