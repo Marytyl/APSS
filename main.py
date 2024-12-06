@@ -36,8 +36,8 @@ def sample_errors(vector_size, error_rate=0.1):
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
-#    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
-    n=1024
+    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
+
     p = mean_same
 #    print("p = " + str(p) + " and n = " + str(math.ceil(n)))
 
@@ -375,14 +375,23 @@ if __name__ == '__main__':
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
         query_time = []
-        for j in range(len(queries_lsh_list)):
+        required_search_items =0
+        parallel_time =[]
+        for j in range(min(len(queries_lsh_list),q)):
             t_start = time.time()
-            print(j, search_query_dict(queries_lsh_list[j], n, k, dict), queries_error_nb[j], queries_error_fraction[j])
+            res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
+            correct = n-erasure-errors
+            if 2*correct >= errors and required_search_items <= 3*errors:
+                required_search_items = 3*errors
+            print(j, res, erasure, errors,  queries_error_nb[j], queries_error_fraction[j])
             t_end = time.time()
             query_time.append(t_end - t_start)
+            parallel_time.append(p_time)
             print("Search Time: ", t_end - t_start)
 
         print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
+        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
+        print("Number of search items needed", required_search_items)
 
 
 
@@ -584,16 +593,25 @@ if __name__ == '__main__':
         #l_query = compute_eLSH(query)
         #l_query = lsh_list[1]
 
-        t_search = [0]*len(queries_lsh_list)
-        for j in range(len(queries_lsh_list)):
+        query_time = []
+        parallel_time = []
+        required_search_items =0 
+        for j in range(min(len(queries_lsh_list),q)):
             t_start = time.time()
-            print(j, search_query_dict(queries_lsh_list[j], n, k, dict))
+            res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
+            correct = n-erasure-errors
+            if 2*correct >= errors and required_search_items <= 3*errors:
+                required_search_items = 3*errors
+            print(j, res, erasure, errors)
             t_end = time.time()
-            t_search[j] = t_end - t_start
-            print("Search Time: ", t_search[j])
+            query_time.append(t_end - t_start)
+            parallel_time.append(p_time)
+            print("Search Time: ", t_end - t_start)
 
-        print("Average Search Time for ", len(queries_lsh_list), "Queries is : ", round(numpy.average(t_search),1) , " seconds.")
-        print("STD DEV Search Time for " , len(queries_lsh_list) , "Queries is : " , round(numpy.std(t_search),1) , " seconds.")
+        print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
+        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
+        print("Number of search items needed", required_search_items)
+
 
     # x_axis = [i+1 for i in range(100)]
     # y_axis = max_nonzero_count
