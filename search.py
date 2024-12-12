@@ -4,39 +4,34 @@ import sys
 import OMapE
 sys.path.append(path.abspath('./UniReedSolomonm'))
 from UniReedSolomonm import rs
+import time
 
 #from reedsolo import RSCodec, ReedSolomonError
 
 from map import map as m
 
-oram = 1
 def search_query_dict(l_q, n, k, dict):
     c = [None for i in range(n+1)]
     erase = n
     erasure_pos = []
     erasure_pos.append(0)
-    parallel_time = None
+    parallel_time = 0
     for j in range(n):
         try:
-            if oram == 1:
-                (res, time_per_depth) = dict[str(j) + ", " + str(l_q[j])]
-                if parallel_time is None:
-                    parallel_time = time_per_depth
-                else:
-                    for depth in parallel_time:
-                        if time_per_depth[depth]>parallel_time[depth]:
-                            parallel_time[depth] = time_per_depth[depth]
-            else:
+                t_start = time.time()
                 res = dict[str(j) + ", " + str(l_q[j])]
-            if  res is not None:
-                c[j+1] = res
-                erase -= 1
-            else:
-                erasure_pos.append(j+1)
+                t_to_search = time.time() - t_start
+                if t_to_search> parallel_time:
+                    parallel_time = t_to_search
+                if  res is not None:
+                    c[j+1] = res
+                    erase -= 1
+                else:
+                    erasure_pos.append(j+1)
         except KeyError:
             erasure_pos.append(j + 1)
     if n - erase < k:
-        return "No match", erase, 0
+        return "No match", erase, 0, parallel_time
     codeword = ""
     # print("c:", c)
     for char in c:
@@ -44,7 +39,7 @@ def search_query_dict(l_q, n, k, dict):
             codeword += char
         else:
             codeword += "\0"
-    print("Parallel time to process ",sum(parallel_time.values()))
+    print("Parallel time to process ",parallel_time)
     # print("codeword: ", codeword)
 
     coder = rs.RSCoder(n+1, k)
@@ -60,10 +55,10 @@ def search_query_dict(l_q, n, k, dict):
                 errors = errors+1
         dec, ecc = coder.decode_fast(codeword, erasures_pos=erasure_pos, only_erasures=False)
         if dec != None:
-            return dec[0], erase, errors, sum(parallel_time.values())
+            return dec[0], erase, errors, parallel_time
         else:
-            return None, erase, errors, sum(parallel_time.values())
+            return None, erase, errors, parallel_time
     except TypeError:
-        return None, 0, 0, sum(parallel_time.values())
+        return None, 0, 0, parallel_time
 
 
