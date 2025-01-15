@@ -125,8 +125,7 @@ def build_ND_dataset(show_hist = False):
         build_show_histogram(nd_templates, nd_queries)
     return nd_templates, nd_queries
 
-
-def build_synthetic_dataset(l, n, t, show_hist= False):
+def build_synthetic_dataset(l, n, t, show_hist= False, error_rate=0.1):
     dataset = []
     queries = []
     labels = []
@@ -143,22 +142,22 @@ def build_synthetic_dataset(l, n, t, show_hist= False):
         dataset.append(read_fvector(x))
         labels.append(x[len(x) - 9:])
 
-        for i in range(100):
-            # create query with 30% errors
-            query = read_fvector(x)
 
-            # sample errors from distribution
-            nb_errors, fraction = sample_errors(n)
-            # print("Errors from normal distribution : " + str(nb_errors))
-            queries_error_fraction.append(fraction)
-            queries_error_nb.append(nb_errors)
+        # create query with 30% errors
+        query = read_fvector(x)
 
-            errors_table.append(nb_errors)
-            # randomly sample error bits to be inverted
-            error_bits = random.sample(range(n), nb_errors)
-            for b in error_bits:
-                query[b] = (query[b] + 1) % 2
-            queries.append(query)
+        nb_errors, fraction = sample_errors(vec_size, error_rate)
+        queries_error_fraction.append(fraction)
+        queries_error_nb.append(nb_errors)
+        # print("Errors from normal distribution : " + str(nb_errors))
+        errors_table.append(nb_errors)
+
+        # randomly sample error bits to be inverted
+        error_bits = random.sample(range(vec_size), nb_errors)
+        for b in error_bits:
+            query[b] = (query[b] + 1) % 2
+
+        queries.append(query)
 
         ctr = ctr + 1
         if ctr == l:
@@ -415,64 +414,62 @@ if __name__ == '__main__':
 
 
     if args.dataset == "synth" or args.dataset == "all":
+        t_start = time.time()
+        random_data, queries, queries_error_fraction, queries_error_nb = build_synthetic_dataset(M, vec_size, t, show_hist,
+                                                                                            error_rate)
+        t_end = time.time()
+        t_dataset = t_end - t_start
+        print("Successfully generated synthetic data in " + str(t_dataset) + " seconds")
+        # print("random data : " + str(random_data))
+        # print("******************")
+        # print("random data size : ", len(random_data))
 
-        for i in range(10):
-            print("run: ", i)
-            t_start = time.time()
-            random_data, queries, queries_error_fraction, queries_error_nb = build_synthetic_dataset(M, vec_size, t, show_hist)
-            t_end = time.time()
-            t_dataset = t_end - t_start
-            print("Successfully generated synthetic data in "+str(t_dataset)+" seconds")
-            # print("random data : " + str(random_data))
-            # print("******************")
-            # print("random data size : ", len(random_data))
-            # print(len(random_data), len(queries))
-            data = to_iris(random_data)
-            queries = to_iris(queries)
-            # query = to_iris(random_data[0])
+        data = to_iris(random_data)
+        queries = to_iris(queries)
+        # query = to_iris(random_data[0])
 
-            success = 1
-            counter = 0
+        success = 1
+        counter = 0
 
-
-            while success != 0:
-                if just_eq_matrix:
-                    t_start = time.time()
-                    eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
-                    t_end = time.time()
-                    t_eq = t_end - t_start
-                    print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-                    # print("eq: ", eq)
-
-                    t_start = time.time()
-                else:
-                    t_start = time.time()
-                    eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
-                    lsh = eLSH.hashes
-                    lsh_list = compute_eLSH(data)
-                    queries_lsh_list = compute_eLSH(queries)
-                    t_end = time.time()
-                    t_lsh = t_end - t_start
-                    print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds")
-                    #print("elsh", lsh_list)
-                    # print("******************")
-                    # print(len(lsh_list[0]), len(lsh_list))
-                    t_start = time.time()
-                    eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
-                    t_end = time.time()
-                    t_eq = t_end - t_start
-                    print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-                #print("eq: ", eq)
+        while success != 0:
+            if just_eq_matrix:
+                t_start = time.time()
+                eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
+                t_end = time.time()
+                t_eq = t_end - t_start
+                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
+                # print("eq: ", eq)
 
                 t_start = time.time()
-                success = is_valid_eq(eq, k)
+            else:
+                t_start = time.time()
+                eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
+                lsh = eLSH.hashes
+                lsh_list = compute_eLSH(data)
+                queries_lsh_list = compute_eLSH(queries)
                 t_end = time.time()
-                t_success = t_end - t_start
-                print("Success is "+str(success)+", checked in "+str(t_success)+" seconds")
+                t_lsh = t_end - t_start
+                print("Successfully generated LSH evaluations in " + str(t_lsh) + " seconds")
+                # print("elsh", lsh_list)
+                # print("******************")
+                # print(len(lsh_list[0]), len(lsh_list))
+                t_start = time.time()
+                eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
+                t_end = time.time()
+                t_eq = t_end - t_start
+                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
+            # print("eq: ", eq)
 
-                counter += 1
-                print("iteration: "+str(counter))
-
+            t_start = time.time()
+            success = is_valid_eq(eq, k)
+            t_end = time.time()
+            t_success = t_end - t_start
+            print("Success is " + str(success) + ", checked in " + str(t_success) + " seconds")
+            print("Number of matches per LSH: ", num_match)
+            # plt.hist(num_match, n)
+            # plt.show()
+            counter += 1
+            print("iteration: " + str(counter))
 
         t_start = time.time()
         codes = sample_codes(n, k, M, eq)
@@ -490,12 +487,26 @@ if __name__ == '__main__':
         else:
             print("Successfully generated ORAM in " + str(t_dict) + " seconds")
 
-        #l_query = compute_eLSH(query)
-        #l_query = lsh_list[1]
+        # l_query = compute_eLSH(query)
+        # l_query = lsh_list[1]
+        query_time = []
+        required_search_items = 0
+        parallel_time = []
+        for j in range(min(len(queries_lsh_list), q)):
+            t_start = time.time()
+            res, erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
+            correct = n - erasure - errors
+            if 2 * correct >= errors and required_search_items <= 3 * errors:
+                required_search_items = 3 * errors
+            print(j, res, erasure, errors, queries_error_nb[j], queries_error_fraction[j])
+            t_end = time.time()
+            query_time.append(t_end - t_start)
+            parallel_time.append(p_time)
+            print("Search Time: ", t_end - t_start)
 
-        for j in range(len(queries_lsh_list)):
-            print(j, search_query_dict(queries_lsh_list[j], n, k, dict), queries_error_nb[j], queries_error_fraction[j])
-
+        print("Avg Query Time", numpy.average(query_time), "STDev", numpy.std(query_time))
+        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
+        print("Number of search items needed", required_search_items)
 
 
     # x_axis = [i+1 for i in range(100)]
