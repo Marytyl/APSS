@@ -55,7 +55,7 @@ def search_query_dict(l_q, n, k, dict):
                 errors = errors+1
         dec, ecc = coder.decode_fast(codeword, erasures_pos=erasure_pos, only_erasures=False)
         if dec != None:
-            return dec[0], erase, errors, parallel_time
+            return int(dec), erase, errors, parallel_time
         else:
             return None, erase, errors, parallel_time
     except TypeError:

@@ -378,13 +378,17 @@ if __name__ == '__main__':
 
         required_search_items =0
         parallel_time =[]
-        for j in range(min(len(queries_lsh_list),q)):
+        true_accept_rate =0
+        queries = min(len(queries_lsh_list),q)
+        for j in range(queries):
             t_start = time.time()
             res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
             correct = n-erasure-errors
             if 2*correct >= errors and required_search_items <= 3*errors:
                 required_search_items = 3*errors
             print(j, res, erasure, errors,  queries_error_nb[j], queries_error_fraction[j])
+            if j == res:
+                true_accept_rate+=1
             t_end = time.time()
             query_time.append(t_end - t_start)
             parallel_time.append(p_time)
@@ -392,6 +396,7 @@ if __name__ == '__main__':
 
         print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
         print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
+        print("True Accept Rate", true_accept_rate/queries)
         print("Number of search items needed", required_search_items)
 
 
@@ -492,7 +497,9 @@ if __name__ == '__main__':
         query_time = []
         required_search_items = 0
         parallel_time = []
-        for j in range(min(len(queries_lsh_list), q)):
+        true_accept_rate =0
+        queries = min(len(queries_lsh_list),q)
+        for j in range(queries):
             t_start = time.time()
             res, erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
             correct = n - erasure - errors
@@ -502,10 +509,13 @@ if __name__ == '__main__':
             t_end = time.time()
             query_time.append(t_end - t_start)
             parallel_time.append(p_time)
+            if j == res:
+                true_accept_rate+=1
             print("Search Time: ", t_end - t_start)
 
         print("Avg Query Time", numpy.average(query_time), "STDev", numpy.std(query_time))
         print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
+        print("True Accept Rate", true_accept_rate/queries)
         print("Number of search items needed", required_search_items)
 
 
@@ -609,7 +619,9 @@ if __name__ == '__main__':
         query_time = []
         parallel_time = []
         required_search_items =0 
-        for j in range(min(len(queries_lsh_list),q)):
+        true_accept_rate =0
+        queries = min(len(queries_lsh_list),q)
+        for j in range(queries):
             t_start = time.time()
             res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
             correct = n-erasure-errors
@@ -620,10 +632,13 @@ if __name__ == '__main__':
             query_time.append(t_end - t_start)
             parallel_time.append(p_time)
             print("Search Time: ", t_end - t_start)
+            if j == res:
+                true_accept_rate+=1
 
         print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
         print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
         print("Number of search items needed", required_search_items)
+        print("True Accept Rate", true_accept_rate/queries)
 
 
     # x_axis = [i+1 for i in range(100)]
