@@ -30,10 +30,10 @@ def read_fvector(filePath):
             temp_str = numpy.fromstring(line, sep=",")
             return [int(x) for x in temp_str]
 
-def sample_errors(vector_size, error_rate=0.1):
+def sample_errors(vector_size, error_rate=0.08):
 
     mean_same = error_rate
-    stdev_same = 0.056
+    stdev_same = 0.063
 
     # compute n using degrees of freedom formula
     n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
@@ -46,7 +46,7 @@ def sample_errors(vector_size, error_rate=0.1):
     nb_errors = round(vector_size * error_fraction)
     return nb_errors, round(error_fraction, 3)
 
-def build_rand_dataset(M, vec_size, t, show_hist = False, error_rate=0.1):
+def build_rand_dataset(M, vec_size, t, show_hist = False, error_rate=0.08):
     dataset = []
     queries = []
     queries_error_fraction = []
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     n = args.nb_eLSHes  # number of eLSHes to calculate
     k = args.nb_matches_needed  # number of needed matches
     just_eq_matrix = 0
-    vec_size = 1024  # vector size
+    vec_size = 512  # vector size
     t = args.same_t
     q = args.nb_queries
     map_type = args.map
