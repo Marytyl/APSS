@@ -101,7 +101,7 @@ def is_valid_eq(eq_mat, k):
             failed_rows += 1
             #break
     # print("Max nonzero count per row: " + str(max_nonzero_count))
-    print("nonzero count list: ", nonzero_count_list)
+    # print("nonzero count list: ", nonzero_count_list)
     print("Max nonzero count per matrix: " + str(max(max_nonzero_count)))
     print("Number of nonzero rows: " + str(nonzero_rows))
     print("Number of failed rows: " + str(failed_rows))

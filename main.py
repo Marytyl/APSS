@@ -348,7 +348,7 @@ if __name__ == '__main__':
             t_end = time.time()
             t_success = t_end - t_start
             print("Success is "+str(success)+", checked in "+str(t_success)+" seconds")
-            print("Number of matches per LSH: ", num_match)
+            print("Number of matches per LSH: ", numpy.average(num_match))
             # plt.hist(num_match, n)
             # plt.show()
             counter += 1
@@ -470,7 +470,7 @@ if __name__ == '__main__':
             t_end = time.time()
             t_success = t_end - t_start
             print("Success is " + str(success) + ", checked in " + str(t_success) + " seconds")
-            print("Number of matches per LSH: ", num_match)
+            print("Number of matches per LSH: ", numpy.average(num_match))
             # plt.hist(num_match, n)
             # plt.show()
             counter += 1
@@ -590,7 +590,7 @@ if __name__ == '__main__':
             t_end = time.time()
             t_success = t_end - t_start
             print("Success is "+str(success)+", checked in "+str(t_success)+" seconds")
-            print("Number of matches per LSH: ", num_match)
+            print("Number of matches per LSH: ", numpy.average(num_match))
             # plt.hist(num_match, n)
             # plt.show()
             counter += 1
