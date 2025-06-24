@@ -1,9 +1,9 @@
 ## random dataset
-#python3 main.py --dataset_size=1000 --lsh_size=17 --nb_eLSHes=398 --nb_matches_needed=21 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand1000_6_90.txt
+#python3 main.py --dataset_size=1000 --lsh_size=17 --nb_eLSHes=398 --nb_matches_needed=21 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand1000_398.txt
 #ls -al heap* >> rand1000_6_90.txt
 #rm heap*
 
-#python3 main.py --dataset_size=1000 --lsh_size=17 --nb_eLSHes=631 --nb_matches_needed=32 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand1000_4_90.txt
+#python3 main.py --dataset_size=1000 --lsh_size=17 --nb_eLSHes=631 --nb_matches_needed=32 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand1000_631.txt
 #ls -al heap* >> rand1000_4_90.txt
 #rm heap*
 
@@ -11,12 +11,19 @@
 #ls -al heap* >> rand1000_4_85.txt
 #rm heap*
 
-python3 main.py --dataset_size=10000 --lsh_size=22 --nb_eLSHes=631 --nb_matches_needed=30 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand10000_6_90.txt
+#python3 main.py --dataset_size=1000 --lsh_size=30 --nb_eLSHes=1000 --nb_matches_needed=16 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='synth' --nb_queries=200 > synth1000.txt
+
+#python3 main.py --dataset_size=2500 --lsh_size=35 --nb_eLSHes=1150 --nb_matches_needed=16 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='synth' --nb_queries=200 > synth2500.txt
 #ls -al heap* >> rand10000_6_90.txt
 #rm heap*
 
-python3 main.py --dataset_size=50000 --lsh_size=24 --nb_eLSHes=1119 --nb_matches_needed=21 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset\
-='rand' --nb_queries=200 > rand10000_6_90.txt
+python3 main.py --dataset_size=5000 --lsh_size=35 --nb_eLSHes=1250 --nb_matches_needed=18 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='synth' --nb_queries=200 
+
+#python3 main.py --dataset_size=10000 --lsh_size=22 --nb_eLSHes=631 --nb_matches_needed=30 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand10000_6_90.txt
+#ls -al heap* >> rand10000_6_90.txt
+#rm heap*
+
+python3 main.py --dataset_size=50000 --lsh_size=24 --nb_eLSHes=1500 --nb_matches_needed=21 --eps_t=90 --eps_f=50 --error_rate_percent=10 --map='dict' --dataset='rand' --nb_queries=200 > rand50000_6_90.txt
 #ls -al heap* >> rand10000_6_90.txt
 #rm heap*
 

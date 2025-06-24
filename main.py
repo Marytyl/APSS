@@ -7,6 +7,7 @@ import random
 import time
 import matplotlib.pyplot as plt
 import os, glob, numpy
+import json
 
 
 import eLSH as eLSH_import
@@ -30,23 +31,21 @@ def read_fvector(filePath):
             temp_str = numpy.fromstring(line, sep=",")
             return [int(x) for x in temp_str]
 
-def sample_errors(vector_size, error_rate=0.08):
-
-    mean_same = error_rate
-    stdev_same = 0.063
-
-    # compute n using degrees of freedom formula
-    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
-
-    p = mean_same
-#    print("p = " + str(p) + " and n = " + str(math.ceil(n)))
-
-    error_fraction = scipy.stats.binom.rvs(math.ceil(n), p) / n
-#    print(error_fraction)
-    nb_errors = round(vector_size * error_fraction)
+def sample_errors(vector_size, error_file):
+    error_dist = None
+    with open(error_file, 'r') as fp:
+        error_dist = json.load(fp)
+    population = []
+    weights = []
+    for errors in error_dist.keys():
+        population.append(int(errors))
+        weights.append(error_dist[errors])
+    nb_errors = random.choices(population, weights)[0]
+    error_fraction = round(nb_errors/vector_size,3)
+    
     return nb_errors, round(error_fraction, 3)
 
-def build_rand_dataset(M, vec_size, t, show_hist = False, error_rate=0.08):
+def build_rand_dataset(M, vec_size, t, show_hist = False, error_file = None):
     dataset = []
     queries = []
     queries_error_fraction = []
@@ -60,7 +59,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False, error_rate=0.08):
         query = dataset[i][:]  # need to be careful to copy value ! (keep the [:] !!)
 
         # sample errors from distribution
-        nb_errors, fraction = sample_errors(vec_size, error_rate)
+        nb_errors, fraction = sample_errors(vec_size, error_file)
         queries_error_fraction.append(fraction)
         queries_error_nb.append(nb_errors)
         # print("Errors from normal distribution : " + str(nb_errors))
@@ -125,7 +124,7 @@ def build_ND_dataset(show_hist = False):
         build_show_histogram(nd_templates, nd_queries)
     return nd_templates, nd_queries
 
-def build_synthetic_dataset(l, n, t, show_hist= False, error_rate=0.1):
+def build_synthetic_dataset(l, n, t, show_hist= False, error_file = None):
     dataset = []
     queries = []
     labels = []
@@ -135,7 +134,7 @@ def build_synthetic_dataset(l, n, t, show_hist= False, error_rate=0.1):
     queries_error_nb = []
 
     cwd = os.getcwd()
-    file_list = glob.glob(cwd + "//datasets//synthetic_dataset//*")
+    file_list = glob.glob(cwd + "/datasets/synthetic_dataset/*")
     print("file size", len(file_list))
 
     for x in file_list:
@@ -146,7 +145,7 @@ def build_synthetic_dataset(l, n, t, show_hist= False, error_rate=0.1):
         # create query with 30% errors
         query = read_fvector(x)
 
-        nb_errors, fraction = sample_errors(vec_size, error_rate)
+        nb_errors, fraction = sample_errors(vec_size, error_file)
         queries_error_fraction.append(fraction)
         queries_error_nb.append(nb_errors)
         # print("Errors from normal distribution : " + str(nb_errors))
@@ -247,9 +246,22 @@ def show_plot(x_axis, y_axis, x_label, y_label, title):
     plt.show()
     # plt.savefig(title)
 
+
+def build_binom_error_dist(vector_size):
+    n=23
+    p=.1
+    binom_pmf = {}
+    for k in range(n+1):
+        binom_pmf[round(vector_size*k/n)] = scipy.stats.binom.pmf(k, n, p)
+    print(binom_pmf)
+    import json
+    with open('error_dist.json', 'w') as fp:
+        json.dump(binom_pmf, fp)
+    exit(1)
 if __name__ == '__main__':
 
     print(sys.version)
+    # build_binom_error_dist(1024)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
@@ -267,6 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--eps_f', help="FPR of each eLSH", type=int, default=50)
     parser.add_argument('--error_rate_percent', help="mean error rate", type=float, default=15)
     parser.add_argument('--map', help="Map to use.", type=str, default='omap')
+    parser.add_argument('--error_dist_file', help="Distribution to use for errors", type=str, default='error_dist.json')
     args = parser.parse_args()
 
     show_hist = bool(args.show_histogram)
@@ -274,16 +287,17 @@ if __name__ == '__main__':
     n = args.nb_eLSHes  # number of eLSHes to calculate
     k = args.nb_matches_needed  # number of needed matches
     just_eq_matrix = 0
-    vec_size = 512  # vector size
+    vec_size = 1024  # vector size
     t = args.same_t
     q = args.nb_queries
     map_type = args.map
+    error_file = args.error_dist_file
 
     r = args.eps_t/100#0.85#math.floor(t * n)
     c = args.eps_f/args.eps_t#50/85#args.diff_t * (n / r)
     s = args.lsh_size
 
-    error_rate = args.error_rate_percent/100
+    # error_rate = args.error_rate_percent/100
 
     print("alpha = ", s, " n = ", n, " k = ", k)
     branching_factor = 2
@@ -299,7 +313,7 @@ if __name__ == '__main__':
     if args.dataset == "rand" or args.dataset == "all":
 
         t_start = time.time()
-        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t, show_hist, error_rate)
+        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t, show_hist, error_file)
         t_end = time.time()
         t_dataset = t_end - t_start
         print("Successfully generated random data in "+str(t_dataset)+" seconds")
@@ -332,7 +346,7 @@ if __name__ == '__main__':
                 queries_lsh_list = compute_eLSH(queries)
                 t_end = time.time()
                 t_lsh = t_end - t_start
-                print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds")
+                print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds", flush=True)
                 #print("elsh", lsh_list)
                 # print("******************")
                 #print(len(lsh_list[0]), len(lsh_list))
@@ -421,7 +435,7 @@ if __name__ == '__main__':
     if args.dataset == "synth" or args.dataset == "all":
         t_start = time.time()
         random_data, queries, queries_error_fraction, queries_error_nb = build_synthetic_dataset(M, vec_size, t, show_hist,
-                                                                                            error_rate)
+                                                                                            error_file)
         t_end = time.time()
         t_dataset = t_end - t_start
         print("Successfully generated synthetic data in " + str(t_dataset) + " seconds")
