@@ -8,6 +8,7 @@ import time
 import matplotlib.pyplot as plt
 import os, glob, numpy
 import json
+from concurrent.futures import ProcessPoolExecutor
 
 
 import eLSH as eLSH_import
@@ -31,19 +32,33 @@ def read_fvector(filePath):
             temp_str = numpy.fromstring(line, sep=",")
             return [int(x) for x in temp_str]
 
+# Cache for population and weights
+_cached_population_weights = None
+
+
 def sample_errors(vector_size, error_file):
+    global _cached_population_weights
+
     error_dist = None
     with open(error_file, 'r') as fp:
         error_dist = json.load(fp)
-    population = []
-    weights = []
-    for errors in error_dist.keys():
-        population.append(int(errors))
-        weights.append(error_dist[errors])
+    
+    if _cached_population_weights is None:
+        population = []
+        weights = []
+        for errors in error_dist.keys():
+            population.append(int(errors))
+            weights.append(error_dist[errors])
+            _cached_population_weights = (population, weights)
+    else:
+        population, weights = _cached_population_weights
+
+    # Sample errors
+    nb_errors = random.choices(population, weights)[0]
     nb_errors = random.choices(population, weights)[0]
     error_fraction = round(nb_errors/vector_size,3)
     
-    return nb_errors, round(error_fraction, 3)
+    return nb_errors, error_fraction
 
 def build_rand_dataset(M, vec_size, t, show_hist = False, error_file = None):
     dataset = []
@@ -179,16 +194,19 @@ def build_synthetic_dataset(l, n, t, show_hist= False, error_file = None):
 
 
 # compute eLSH and returns the list of length l
-def compute_eLSH_one(element):
+def compute_eLSH_one(eLSH, element):
     output = eLSH.hash(element.vector)  # length of l
     #put_elements_map(element, output)
     return output
 
 # computes eLSH output of multiple elements F
-def compute_eLSH(elements):
-    output = []
-    for i in elements:
-        output.append(compute_eLSH_one(i))
+def compute_eLSH_one_wrapper(args):
+    eLSH, element = args
+    return compute_eLSH_one(eLSH, element)
+
+def compute_eLSH(eLSH, elements):
+    with ProcessPoolExecutor() as executor:
+        output = list(executor.map(compute_eLSH_one_wrapper, [(eLSH, element) for element in elements]))
     return output
 
 def hamming_dist(sample1, sample2):
@@ -255,14 +273,108 @@ def build_binom_error_dist(vector_size):
         binom_pmf[round(vector_size*k/n)] = scipy.stats.binom.pmf(k, n, p)
     print(binom_pmf)
     import json
+
     with open('error_dist.json', 'w') as fp:
         json.dump(binom_pmf, fp)
     exit(1)
+
+def process_single_query(args):
+    j, query, n, k, dict = args
+    t_start = time.time()
+    res, erasure, errors, p_time = search_query_dict(query, n, k, dict)
+    t_end = time.time()
+    correct = n - erasure - errors
+    required_search_items = 3 * errors if 2 * correct >= errors else 0
+    true_accept = 1 if res == j else 0
+    return t_end - t_start, p_time, required_search_items, true_accept
+
+def process_queries(queries_lsh_list, q, n, k):
+
+    query_time = []
+    parallel_time = []
+    required_search_items = 0
+    true_accept_rate = 0
+
+    with ProcessPoolExecutor() as executor:
+        results = executor.map(process_single_query, [(j, queries_lsh_list[j], n, k, dict) for j in range(q)])
+
+    for t_time, p_time, search_items, accept in results:
+        query_time.append(t_time)
+        parallel_time.append(p_time)
+        required_search_items = max(required_search_items, search_items)
+        true_accept_rate += accept
+
+    return query_time, parallel_time, required_search_items, true_accept_rate
+
+def process_dataset(dataset_type, M, vec_size, t, show_hist, error_file, map_type, q, k, s, n, LSH, r, c):
+    if dataset_type == "rand":
+        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t, show_hist, error_file)
+    elif dataset_type == "synth":
+        random_data, queries, queries_error_fraction, queries_error_nb = build_synthetic_dataset(M, vec_size, t, show_hist, error_file)
+    elif dataset_type == "nd":
+        random_data, queries = build_ND_dataset(show_hist)
+        queries_error_fraction, queries_error_nb = None, None
+    else:
+        raise ValueError("Invalid dataset type")
+
+    print(f"Successfully generated {dataset_type} data")
+    data = to_iris(random_data)
+    queries = to_iris(queries)
+
+    success = 1
+    counter = 0
+
+    while success != 0:
+        if just_eq_matrix:
+            eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
+        else:
+            t_start = time.time()
+            eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
+            lsh = eLSH.hashes
+            lsh_list = compute_eLSH(eLSH, data)
+            queries_lsh_list = compute_eLSH(eLSH, queries)
+            t_end = time.time()
+            t_lsh = t_end - t_start
+            print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds", flush=True)
+            t_start = time.time()
+            eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
+            t_end = time.time()
+            t_eq = t_end - t_start
+            print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
+
+        t_start = time.time()
+        success = is_valid_eq(eq, k)
+        t_success = time.time() - t_start
+        print(f"Success is {success}, checked in {t_success:.2f} seconds")
+        print(f"Number of matches per LSH: {round(numpy.average(num_match))}")
+        counter += 1
+        print(f"Iteration: {counter}")
+
+    codes = sample_codes(n, k, M, eq)
+    global dict
+    t_start = time.time()
+    dict = gen_dict(codes, M, n, lsh_list, map_type)
+    t_dict = time.time() - t_start
+    print(f"Successfully generated {map_type} in {t_dict:.2f} seconds")
+
+    query_time = []
+    parallel_time = []
+    required_search_items = 0
+    true_accept_rate = 0
+
+    q = min(q, len(queries_lsh_list))
+    (query_time, parallel_time, required_search_items, true_accept_rate) = process_queries(queries_lsh_list, q, n, k)
+
+    print(f"Avg Query Time: {numpy.average(query_time):.2f}, STDev: {numpy.std(query_time):.2f}")
+    print(f"Avg Parallel Time: {numpy.average(parallel_time):.6f}, STDev: {numpy.std(parallel_time):.6f}")
+    print(f"True Accept Rate: {true_accept_rate / q:.2f}")
+    print(f"Number of search items needed: {required_search_items}")
+
+
 if __name__ == '__main__':
-
     print(sys.version)
-    # build_binom_error_dist(1024)
 
+    # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=1000)
@@ -281,7 +393,6 @@ if __name__ == '__main__':
     parser.add_argument('--map', help="Map to use.", type=str, default='omap')
     parser.add_argument('--error_dist_file', help="Distribution to use for errors", type=str, default='error_dist.json')
     args = parser.parse_args()
-
     show_hist = bool(args.show_histogram)
     M = args.dataset_size  # dataset size
     n = args.nb_eLSHes  # number of eLSHes to calculate
@@ -300,376 +411,10 @@ if __name__ == '__main__':
     # error_rate = args.error_rate_percent/100
 
     print("alpha = ", s, " n = ", n, " k = ", k)
-    branching_factor = 2
-    root_bf_fpr = args.root_bf_fp
-    internal_bf_fpr = args.internal_bf_fp
-    lsh_size = args.lsh_size  # LSH output size
-    # max_nonzero_count = [0 for i in range(100)]
-    # max_nonzero_rows = [0 for i in range(100)]
-    # failed_rows = [0 for i in range(100)]
 
-    query = None
-    # build & search using random dataset
-    if args.dataset == "rand" or args.dataset == "all":
-
-        t_start = time.time()
-        random_data, queries, queries_error_fraction, queries_error_nb = build_rand_dataset(M, vec_size, t, show_hist, error_file)
-        t_end = time.time()
-        t_dataset = t_end - t_start
-        print("Successfully generated random data in "+str(t_dataset)+" seconds")
-        # print("random data : " + str(random_data))
-        # print("******************")
-        # print("random data size : ", len(random_data))
-
-        data = to_iris(random_data)
-        queries = to_iris(queries)
-        # query = to_iris(random_data[0])
-
-        success = 1
-        counter = 0
-
-        while success != 0:
-            if just_eq_matrix:
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-                # print("eq: ", eq)
-
-                t_start = time.time()
-            else:
-                t_start = time.time()
-                eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
-                lsh = eLSH.hashes
-                lsh_list = compute_eLSH(data)
-                queries_lsh_list = compute_eLSH(queries)
-                t_end = time.time()
-                t_lsh = t_end - t_start
-                print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds", flush=True)
-                #print("elsh", lsh_list)
-                # print("******************")
-                #print(len(lsh_list[0]), len(lsh_list))
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-            #print("eq: ", eq)
-
-            t_start = time.time()
-            success = is_valid_eq(eq, k)
-            t_end = time.time()
-            t_success = t_end - t_start
-            print("Success is "+str(success)+", checked in "+str(t_success)+" seconds")
-            print("Number of matches per LSH: ", numpy.average(num_match))
-            # plt.hist(num_match, n)
-            # plt.show()
-            counter += 1
-            print("iteration: "+str(counter))
-
-
-        t_start = time.time()
-        codes = sample_codes(n, k, M, eq)
-        t_end = time.time()
-        t_code_sampling = t_end - t_start
-        print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
-        # print(codes)
-
-        t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list, map_type)
-        t_end = time.time()
-        t_dict = t_end - t_start
-        if map_type == 'dict':
-            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
-        else:
-            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
-
-        #l_query = compute_eLSH(query)
-        #l_query = lsh_list[1]
-        query_time = []
-
-
-        required_search_items =0
-        parallel_time =[]
-        true_accept_rate =0
-        queries = min(len(queries_lsh_list),q)
-        for j in range(queries):
-            t_start = time.time()
-            res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
-            correct = n-erasure-errors
-            if 2*correct >= errors and required_search_items <= 3*errors:
-                required_search_items = 3*errors
-            print(j, res, erasure, errors,  queries_error_nb[j], queries_error_fraction[j])
-            if j == res:
-                true_accept_rate+=1
-            t_end = time.time()
-            query_time.append(t_end - t_start)
-            parallel_time.append(p_time)
-            print("Search Time: ", t_end - t_start)
-
-        print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
-        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
-        print("True Accept Rate", true_accept_rate/queries)
-        print("Number of search items needed", required_search_items)
-
-
-
-    # x_axis = [i+1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^3")
-    # print("******")
-    # print(max_nonzero_count)
-    # print("******")
-    # print(max_nonzero_rows)
-    # print("******")
-    # print(failed_rows)
-    # print("******")
-    # x_axis = [i + 1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^4, c_1=5")
-
-
-    if args.dataset == "synth" or args.dataset == "all":
-        t_start = time.time()
-        random_data, queries, queries_error_fraction, queries_error_nb = build_synthetic_dataset(M, vec_size, t, show_hist,
-                                                                                            error_file)
-        t_end = time.time()
-        t_dataset = t_end - t_start
-        print("Successfully generated synthetic data in " + str(t_dataset) + " seconds")
-        # print("random data : " + str(random_data))
-        # print("******************")
-        # print("random data size : ", len(random_data))
-
-        data = to_iris(random_data)
-        queries = to_iris(queries)
-        # query = to_iris(random_data[0])
-
-        success = 1
-        counter = 0
-
-        while success != 0:
-            if just_eq_matrix:
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-                # print("eq: ", eq)
-
-                t_start = time.time()
-            else:
-                t_start = time.time()
-                eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
-                lsh = eLSH.hashes
-                lsh_list = compute_eLSH(data)
-                queries_lsh_list = compute_eLSH(queries)
-                t_end = time.time()
-                t_lsh = t_end - t_start
-                print("Successfully generated LSH evaluations in " + str(t_lsh) + " seconds")
-                # print("elsh", lsh_list)
-                # print("******************")
-                # print(len(lsh_list[0]), len(lsh_list))
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-            # print("eq: ", eq)
-
-            t_start = time.time()
-            success = is_valid_eq(eq, k)
-            t_end = time.time()
-            t_success = t_end - t_start
-            print("Success is " + str(success) + ", checked in " + str(t_success) + " seconds")
-            print("Number of matches per LSH: ", numpy.average(num_match))
-            # plt.hist(num_match, n)
-            # plt.show()
-            counter += 1
-            print("iteration: " + str(counter))
-
-        t_start = time.time()
-        codes = sample_codes(n, k, M, eq)
-        t_end = time.time()
-        t_code_sampling = t_end - t_start
-        print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
-        # print(codes)
-
-        t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list, map_type)
-        t_end = time.time()
-        t_dict = t_end - t_start
-        if map_type == 'dict':
-            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
-        else:
-            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
-
-        # l_query = compute_eLSH(query)
-        # l_query = lsh_list[1]
-        query_time = []
-        required_search_items = 0
-        parallel_time = []
-        true_accept_rate =0
-        queries = min(len(queries_lsh_list),q)
-        for j in range(queries):
-            t_start = time.time()
-            res, erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
-            correct = n - erasure - errors
-            if 2 * correct >= errors and required_search_items <= 3 * errors:
-                required_search_items = 3 * errors
-            print(j, res, erasure, errors, queries_error_nb[j], queries_error_fraction[j])
-            t_end = time.time()
-            query_time.append(t_end - t_start)
-            parallel_time.append(p_time)
-            if j == res:
-                true_accept_rate+=1
-            print("Search Time: ", t_end - t_start)
-
-        print("Avg Query Time", numpy.average(query_time), "STDev", numpy.std(query_time))
-        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
-        print("True Accept Rate", true_accept_rate/queries)
-        print("Number of search items needed", required_search_items)
-
-
-    # x_axis = [i+1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^3")
-    # print("******")
-    # print(max_nonzero_count)
-    # print("******")
-    # print(max_nonzero_rows)
-    # print("******")
-    # print(failed_rows)
-    # print("******")
-    # x_axis = [i + 1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^4, c_1=5")
-
-    if args.dataset == "nd" or args.dataset == "all":
-        t_start = time.time()
-        random_data, queries = build_ND_dataset(show_hist)
-        t_end = time.time()
-        t_dataset = t_end - t_start
-        print("Successfully generated real data in "+str(t_dataset)+" seconds")
-        # print("random data : " + str(random_data))
-        # print("******************")
-        # print("random data size : ", len(random_data))
-        # print(len(random_data), len(queries))
-        data = to_iris(random_data)
-        queries = to_iris(queries)
-        # query = to_iris(random_data[0])
-
-        success = 1
-        counter = 0
-
-
-        while success != 0:
-            if just_eq_matrix:
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix_parallel(M, n, data, s, vec_size)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-                # print("eq: ", eq)
-
-                t_start = time.time()
-            else:
-                t_start = time.time()
-                eLSH = eLSH_import.eLSH(LSH, vec_size, r, c, s, n)
-                lsh = eLSH.hashes
-                lsh_list = compute_eLSH(data)
-                # print(lsh_list[0][0])
-                # print(lsh_list[1][0])
-
-                queries_lsh_list = compute_eLSH(queries)
-                t_end = time.time()
-                t_lsh = t_end - t_start
-                print("Successfully generated LSH evaluations in "+str(t_lsh)+" seconds")
-                # print("elsh", lsh_list)
-                # print("******************")
-                # print(len(lsh_list[0]), len(lsh_list))
-                t_start = time.time()
-                eq, num_match = gen_eq_matrix(len(lsh_list), len(lsh_list[0]), lsh_list)
-                t_end = time.time()
-                t_eq = t_end - t_start
-                print("Successfully generated equality matrix in " + str(t_eq) + " seconds")
-            # print("eq: ", eq)
-
-            t_start = time.time()
-            success = is_valid_eq(eq, k)
-            t_end = time.time()
-            t_success = t_end - t_start
-            print("Success is "+str(success)+", checked in "+str(t_success)+" seconds")
-            print("Number of matches per LSH: ", numpy.average(num_match))
-            # plt.hist(num_match, n)
-            # plt.show()
-            counter += 1
-            print("iteration: "+str(counter))
-
-
-        t_start = time.time()
-        codes = sample_codes(n, k, M, eq)
-        t_end = time.time()
-        t_code_sampling = t_end - t_start
-        print("Successfully sampled codes in " + str(t_code_sampling) + " seconds")
-        # print(codes)
-
-        t_start = time.time()
-        dict = gen_dict(codes, M, n, lsh_list, map_type)
-        t_end = time.time()
-        t_dict = t_end - t_start
-        if map_type=='dict':
-            print("Successfully generated dictionary in " + str(t_dict) + " seconds")
-        else:
-            print("Successfully generated ORAM in " + str(t_dict) + " seconds")
-
-        #l_query = compute_eLSH(query)
-        #l_query = lsh_list[1]
-
-        query_time = []
-        parallel_time = []
-        required_search_items =0 
-        true_accept_rate =0
-        queries = min(len(queries_lsh_list),q)
-        for j in range(queries):
-            t_start = time.time()
-            res , erasure, errors, p_time = search_query_dict(queries_lsh_list[j], n, k, dict)
-            correct = n-erasure-errors
-            if 2*correct >= errors and required_search_items <= 3*errors:
-                required_search_items = 3*errors
-            print(j, res, erasure, errors)
-            t_end = time.time()
-            query_time.append(t_end - t_start)
-            parallel_time.append(p_time)
-            print("Search Time: ", t_end - t_start)
-            if j == res:
-                true_accept_rate+=1
-
-        print("Avg Query Time", numpy.average(query_time),"STDev",numpy.std(query_time))
-        print("Avg Parallel Time", numpy.average(parallel_time), "STDev", numpy.std(parallel_time))
-        print("Number of search items needed", required_search_items)
-        print("True Accept Rate", true_accept_rate/queries)
-
-
-    # x_axis = [i+1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis,  "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^3")
-    # print("******")
-    # print(max_nonzero_count)
-    # print("******")
-    # print(max_nonzero_rows)
-    # print("******")
-    # print(failed_rows)
-    # print("******")
-    # x_axis = [i + 1 for i in range(100)]
-    # y_axis = max_nonzero_count
-    # show_plot(x_axis, y_axis, "Frequency", "Max. number of eLSH matches",
-    #           "Histogram of Maximum number of matches, M=10^4, c_1=5")
+    # Process dataset
+    if args.dataset in ["rand", "synth", "nd", "all"]:
+        process_dataset(args.dataset, M, vec_size, t, show_hist, error_file, map_type, q, k, s, n, LSH, r, c)
 
 
 

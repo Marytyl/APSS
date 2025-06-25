@@ -39,9 +39,6 @@ def search_query_dict(l_q, n, k, dict):
             codeword += char
         else:
             codeword += "\0"
-    print("Parallel time to process ",parallel_time)
-    # print("codeword: ", codeword)
-
     coder = rs.RSCoder(n+1, k)
     # coder = RSCodec(n)
     try:

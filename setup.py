@@ -13,6 +13,7 @@ sys.path.append(path.abspath('./UniReedSolomonm'))
 from UniReedSolomonm import rs
 from collections import Counter
 from OMapE.b4_oram import OMapE
+from concurrent.futures import ProcessPoolExecutor
 
 
 #num_cores = mp.cpu_count()
@@ -51,8 +52,25 @@ def gen_eq_matrix_parallel(M, n, dataset, s, vec_size):
             eq_matrix[i][j] = col[i]
     return eq_matrix
 
+
+
+def process_column(j, row, lsh_list):
+    lsh_dict = {}
+    eq_mat_col = [0] * row
+    num_lsh_matches = 1
+
+    for i in range(1, row):
+        key = str(j) + ", " + str(lsh_list[i][j])
+        if key in lsh_dict:
+            eq_mat_col[i] = lsh_dict[key]
+            num_lsh_matches += 1
+        else:
+            lsh_dict[key] = i
+
+    return eq_mat_col, num_lsh_matches
+
+
 def gen_eq_matrix(M, n, lsh_list):
-    parallel = 0
     row, col = M, n
     eq_mat = [[0 for i in range(col)] for j in range(row)]
     num_lsh_matches = [1 for i in range(col)]
@@ -60,8 +78,6 @@ def gen_eq_matrix(M, n, lsh_list):
 
     lsh_dict = {}
     for j in range(col):
-        # if j%100 == 0:
-        #     print("Current column is "+str(j))
         for i in range(1, row):
             key = str(j)+", "+str(lsh_list[i][j])
             if key in lsh_dict:
@@ -71,6 +87,7 @@ def gen_eq_matrix(M, n, lsh_list):
                 lsh_dict[key] = i
 
     return eq_mat, num_lsh_matches
+
 
 def is_valid_eq(eq_mat, k):
     flag = 0
