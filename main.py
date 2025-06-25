@@ -8,8 +8,11 @@ import time
 import matplotlib.pyplot as plt
 import os, glob, numpy
 import json
-from concurrent.futures import ProcessPoolExecutor
+
 PARALLEL = False
+if PARALLEL:
+    from concurrent.futures import ProcessPoolExecutor
+
 
 import eLSH as eLSH_import
 from LSH import LSH
