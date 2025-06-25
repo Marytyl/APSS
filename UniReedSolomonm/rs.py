@@ -323,7 +323,7 @@ class RSCoder(object):
         # X is a corresponding array of GF(2^8) values where X_i = alpha^(j_i)
         X, j = self._chien_search(sigma)
         if X == None and j == None:
-            print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            # print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
             return
 
         # Sanity check: Cannot guarantee correct decoding of more than n-k errata (Singleton Bound, n-k being the minimum distance), and we cannot even check if it's correct (the syndrome will always be all 0 if we try to decode above the bound), thus it's better to just return the input as-is.
@@ -444,7 +444,7 @@ class RSCoder(object):
         # X is a corresponding array of GF(2^8) values where X_i = alpha^(j_i)
         X, j = self._chien_search_faster(sigma)
         if X == None and j == None:
-            print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            # print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
             return
 
         # Sanity check: Cannot guarantee correct decoding of more than n-k errata (Singleton Bound, n-k being the minimum distance), and we cannot even check if it's correct (the syndrome will always be all 0 if we try to decode above the bound), thus it's better to just return the input as-is.
@@ -829,7 +829,7 @@ class RSCoder(object):
         errs_nb = len(sigma) - 1 # compute the exact number of errors/errata that this error locator should find
         if len(j) != errs_nb:
             # raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
-            print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            # print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
             return None, None
         return X, j
 
@@ -892,7 +892,7 @@ class RSCoder(object):
         if len(j) != errs_nb:
             # Note: decoding messages+ecc with length n > self.gf2_charac does work partially, but it's wrong, because you will get duplicated values, and then Chien Search cannot discriminate which root is correct and which is not. The duplication of values is normally prevented by the prime polynomial reduction when generating the field (see init_lut() in ff.py), but if you overflow the field, you have no guarantee anymore. We may try to use a bruteforce approach: the correct positions ARE in the final array j, but the problem is because we are above the Galois Field's range, there is a wraparound because of overflow so that for example if j should be [0, 1, 2, 3], we will also get [255, 256, 257, 258] (because 258 % 255 == 3, same for the other values), so we can't discriminate. The issue with that bruteforce approach is that fixing any errs_nb errors among those will always give a correct output message (in the sense that the syndrome will be all 0), so we may not even be able to check if that's correct or not, so there's clearly no way to decode a message of greater length than the field.
             # raise RSCodecError("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
-            print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
+            # print("Too many (or few) errors found by Chien Search for the errata locator polynomial!")
             return None, None
         return X, j
 
