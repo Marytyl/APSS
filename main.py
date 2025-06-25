@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import os, glob, numpy
 import json
 from concurrent.futures import ProcessPoolExecutor
-
+PARALLEL = False
 
 import eLSH as eLSH_import
 from LSH import LSH
@@ -205,8 +205,11 @@ def compute_eLSH_one_wrapper(args):
     return compute_eLSH_one(eLSH, element)
 
 def compute_eLSH(eLSH, elements):
-    with ProcessPoolExecutor() as executor:
-        output = list(executor.map(compute_eLSH_one_wrapper, [(eLSH, element) for element in elements]))
+    if PARALLEL:
+        with ProcessPoolExecutor() as executor:
+            output = list(executor.map(compute_eLSH_one_wrapper, [(eLSH, element) for element in elements]))
+    else:
+        output = [compute_eLSH_one(eLSH, element) for element in elements]
     return output
 
 def hamming_dist(sample1, sample2):
@@ -295,9 +298,13 @@ def process_queries(queries_lsh_list, q, n, k):
     required_search_items = 0
     true_accept_rate = 0
 
-    with ProcessPoolExecutor() as executor:
-        results = executor.map(process_single_query, [(j, queries_lsh_list[j], n, k, dict) for j in range(q)])
-
+    if PARALLEL:
+        with ProcessPoolExecutor() as executor:
+            results = executor.map(process_single_query, [(j, queries_lsh_list[j], n, k, dict) for j in range(q)])
+    else:
+        results = []
+        for j in range(q):
+            results.append(process_single_query((j, queries_lsh_list[j], n, k, dict)))
     for t_time, p_time, search_items, accept in results:
         query_time.append(t_time)
         parallel_time.append(p_time)
