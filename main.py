@@ -63,6 +63,56 @@ def sample_errors(vector_size, error_file):
     
     return nb_errors, error_fraction
 
+
+def build_synthetic_dataset(M, vec_size, t, show_hist = False, error_file = None):
+    print("This is the new code")
+    dataset = []
+    queries = []
+    queries_error_fraction = []
+    queries_error_nb = []
+    errors_table = []
+    for i in range(M):
+        (n, p) = build_synth_dist()  # n is the number of bits, p is the probability of error
+        num_ones = round(vec_size*numpy.random.binomial(n,p)/n)
+        feature=numpy.zeros(vec_size)
+        feature[:num_ones] = 1
+        numpy.random.shuffle(feature)
+        feature = [random.getrandbits(1) for i in range(vec_size)]
+        if i< 2:
+            print(feature[:20])
+        dataset.append(feature)
+
+    # for i in range(M):
+        query = dataset[i][:]  # need to be careful to copy value ! (keep the [:] !!)
+
+        # sample errors from distribution
+        nb_errors, fraction = sample_errors(vec_size, error_file)
+        queries_error_fraction.append(fraction)
+        queries_error_nb.append(nb_errors)
+        # print("Errors from normal distribution : " + str(nb_errors))
+        errors_table.append(nb_errors)
+
+        # randomly sample error bits to be inverted
+        error_bits = random.sample(range(vec_size), nb_errors)
+        for b in error_bits:
+            query[b] = (query[b] + 1) % 2
+
+        queries.append(query)
+
+    if show_hist == 1:
+        for j in range(0, len(dataset)):
+            queries[j] = []
+            for i in range(0, 100):
+                nb_errors, fraction = sample_errors(n)
+                temp_query = dataset[j].copy()
+                error_bits = random.sample(range(n), nb_errors)
+                for b in error_bits:
+                    temp_query[b] = (temp_query[b] + 1) % 2
+                queries[j].append(temp_query)
+        build_show_histogram(dataset, queries)
+    # print(errors_table)
+    # plt.plot(errors_table)
+    return dataset, queries, queries_error_fraction, queries_error_nb
 def build_rand_dataset(M, vec_size, t, show_hist = False, error_file = None):
     dataset = []
     queries = []
@@ -142,7 +192,7 @@ def build_ND_dataset(show_hist = False):
         build_show_histogram(nd_templates, nd_queries)
     return nd_templates, nd_queries
 
-def build_synthetic_dataset(l, n, t, show_hist= False, error_file = None):
+def build_synthetic_dataset_old(l, n, t, show_hist= False, error_file = None):
     dataset = []
     queries = []
     labels = []
@@ -271,6 +321,22 @@ def show_plot(x_axis, y_axis, x_label, y_label, title):
     # plt.savefig(title)
 
 
+def build_synth_dist():
+    mu = .4939
+    sigma = .0255
+    df = mu*(1-mu)/sigma**2
+    n=round(df*-math.log2(mu))
+    p=mu
+    return (n, p)
+    # binom_pmf = {}
+    # for k in range(n+1):
+    #     binom_pmf[round(vector_size*k/n)] = scipy.stats.binom.pmf(k, n, p)
+    # import json
+
+    # with open('synth_dist.json', 'w') as fp:
+    #     json.dump(binom_pmf, fp)
+    # exit(1)
+
 def build_binom_error_dist(vector_size):
     n=23
     p=.1
@@ -290,6 +356,7 @@ def process_single_query(args):
     res, erasure, errors, p_time = search_query_dict(query, n, k, dict)
     t_end = time.time()
     correct = n - erasure - errors
+    
     required_search_items = 3 * errors if 2 * correct >= errors else 0
     true_accept = 1 if res == j else 0
     return t_end - t_start, p_time, required_search_items, true_accept
@@ -308,11 +375,15 @@ def process_queries(queries_lsh_list, q, n, k):
         results = []
         for j in range(q):
             results.append(process_single_query((j, queries_lsh_list[j], n, k, dict)))
+
+            if j%10 == 0:
+                print("Current TAR is ",sum([res[3] for res in results])/len(results), flush=True)
     for t_time, p_time, search_items, accept in results:
         query_time.append(t_time)
         parallel_time.append(p_time)
         required_search_items = max(required_search_items, search_items)
         true_accept_rate += accept
+        
 
     return query_time, parallel_time, required_search_items, true_accept_rate
 
@@ -383,7 +454,6 @@ def process_dataset(dataset_type, M, vec_size, t, show_hist, error_file, map_typ
 
 if __name__ == '__main__':
     print(sys.version)
-
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
