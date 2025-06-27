@@ -166,7 +166,7 @@ def build_rand_dataset(M, vec_size, t, show_hist = False, error_file = None):
 
 def build_ND_dataset(show_hist = False):
     cwd = os.getcwd()
-    dir_list = glob.glob(cwd + "//datasets//1024_folders//*")
+    dir_list = glob.glob(cwd + "//datasets//iitd_embeddings_no_far//*")
     nd_dataset = {}
     class_labels = {}
     i = 0
@@ -478,7 +478,8 @@ if __name__ == '__main__':
     n = args.nb_eLSHes  # number of eLSHes to calculate
     k = args.nb_matches_needed  # number of needed matches
     just_eq_matrix = 0
-    vec_size = 1024  # vector size
+    #Need to use 512 for IITD, TODO: make this switch automatically based on dataset
+    vec_size = 1024 # vector size
     t = args.same_t
     q = args.nb_queries
     map_type = args.map
