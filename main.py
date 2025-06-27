@@ -100,15 +100,6 @@ def build_synthetic_dataset(M, vec_size, t, show_hist = False, error_file = None
         queries.append(query)
 
     if show_hist == 1:
-        for j in range(0, len(dataset)):
-            queries[j] = []
-            for i in range(0, 100):
-                nb_errors, fraction = sample_errors(n)
-                temp_query = dataset[j].copy()
-                error_bits = random.sample(range(n), nb_errors)
-                for b in error_bits:
-                    temp_query[b] = (temp_query[b] + 1) % 2
-                queries[j].append(temp_query)
         build_show_histogram(dataset, queries)
     # print(errors_table)
     # plt.plot(errors_table)
@@ -141,15 +132,6 @@ def build_rand_dataset(M, vec_size, t, show_hist = False, error_file = None):
         queries.append(query)
 
     if show_hist == 1:
-        for j in range(0, len(dataset)):
-            queries[j] = []
-            for i in range(0, 100):
-                nb_errors, fraction = sample_errors(n)
-                temp_query = dataset[j].copy()
-                error_bits = random.sample(range(n), nb_errors)
-                for b in error_bits:
-                    temp_query[b] = (temp_query[b] + 1) % 2
-                queries[j].append(temp_query)
         build_show_histogram(dataset, queries)
     # print(errors_table)
     # plt.plot(errors_table)
@@ -305,11 +287,9 @@ def build_show_histogram(data, queries):
         plt.legend()
         plt.xlabel("Hamming Distance")
         plt.ylabel("Frequency")
-        plt.title("Random Data")
+        plt.title("Synthetic Data")
         plt.show()
 
-#    plt.hist(redComparisons, normed=True, bins=120, histtype='stepfilled', color='r', label='Different')
-# plt.show()
 
 
 def show_plot(x_axis, y_axis, x_label, y_label, title):
